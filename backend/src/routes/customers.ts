@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { prisma } from '../db/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { logger } from '../lib/logger';
 
 const customersRoutes = new Hono();
 
@@ -26,7 +27,7 @@ customersRoutes.get('/', async (c) => {
     
     return c.json(customers);
   } catch (error) {
-    console.error('Error fetching customers:', error);
+    logger.error('Error fetching customers:', error);
     return c.json({ message: 'Failed to fetch customers from SEJDB2020' }, 500);
   }
 });

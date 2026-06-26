@@ -45,7 +45,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster position="top-right" />
-      <Router>
+      <Router basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

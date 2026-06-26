@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../db/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { requirePermission } from '../middleware/permissionMiddleware';
+import { logger } from '../lib/logger';
 
 const usersRoutes = new Hono();
 
@@ -41,7 +42,7 @@ usersRoutes.get('/', async (c) => {
       data: formattedUsers
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    logger.error('Error fetching users:', error);
     return c.json({ message: 'Failed to fetch users' }, 500);
   }
 });
@@ -115,7 +116,7 @@ usersRoutes.put('/:id/status', zValidator('json', statusSchema), async (c) => {
       }
     });
   } catch (error) {
-    console.error('Error updating user status:', error);
+    logger.error('Error updating user status:', error);
     return c.json({ message: 'Failed to update user status' }, 500);
   }
 });
@@ -151,7 +152,7 @@ usersRoutes.put('/:id/role', zValidator('json', roleSchema), async (c) => {
       }
     });
   } catch (error) {
-    console.error('Error updating user role:', error);
+    logger.error('Error updating user role:', error);
     return c.json({ message: 'Failed to update user role' }, 500);
   }
 });

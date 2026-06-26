@@ -23,6 +23,24 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, info);
+    
+    // Send to backend
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      fetch(`${apiUrl}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: error.message,
+          stack: error.stack,
+          componentStack: info.componentStack,
+          userAgent: window.navigator.userAgent,
+          url: window.location.href,
+        })
+      }).catch(e => console.error('Failed to send error log to server', e));
+    } catch (e) {
+      // Ignore errors during logging to prevent infinite loops
+    }
   }
 
   handleReset = () => {

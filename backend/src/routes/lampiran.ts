@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { prisma } from '../db/prisma';
 import { saveFile, deleteFile, saveAvatar } from '../services/fileService';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { logger } from '../lib/logger';
 import fs from 'fs';
 import path from 'path';
 
@@ -68,7 +69,7 @@ lampiranRoutes.delete('/:id', authMiddleware, async (c) => {
 
     return c.json({ message: 'Attachment deleted successfully' });
   } catch (error) {
-    console.error('Error deleting attachment:', error);
+    logger.error('Error deleting attachment:', error);
     return c.json({ message: 'Failed to delete attachment' }, 500);
   }
 });
@@ -117,7 +118,7 @@ lampiranRoutes.post('/local-charges/:id', authMiddleware, async (c) => {
       fdFileSize: Number(newLampiran.fdUkuranBytes)
     }, 201);
   } catch (error: any) {
-    console.error('Error uploading file:', error);
+    logger.error('Error uploading file:', error);
     return c.json({ message: error.message || 'Failed to upload file' }, 400);
   }
 });
@@ -140,7 +141,7 @@ lampiranRoutes.post('/avatar', authMiddleware, async (c) => {
       url: `/api/v1/lampiran/download/avatars/${path.split('/').pop()}`
     }, 201);
   } catch (error: any) {
-    console.error('Error uploading avatar:', error);
+    logger.error('Error uploading avatar:', error);
     return c.json({ message: error.message || 'Failed to upload avatar' }, 400);
   }
 });

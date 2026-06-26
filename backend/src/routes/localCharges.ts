@@ -5,6 +5,7 @@ import { prisma } from '../db/prisma';
 import { Prisma } from '@prisma/client';
 import { generateFormNumber } from '../services/formNumberService';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { logger } from '../lib/logger';
 import { requirePermission } from '../middleware/permissionMiddleware';
 
 const localChargesRoutes = new Hono();
@@ -220,7 +221,7 @@ localChargesRoutes.get('/stats', async (c) => {
       })),
     });
   } catch (error) {
-    console.error('Stats error:', error);
+    logger.error('Stats error:', error);
     return c.json({ message: 'Failed to fetch stats' }, 500);
   }
 });

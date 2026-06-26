@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../db/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { logger } from '../lib/logger';
 
 const rolesRoutes = new Hono();
 
@@ -41,7 +42,7 @@ rolesRoutes.get('/', async (c) => {
       }))
     });
   } catch (error) {
-    console.error('Error fetching roles:', error);
+    logger.error('Error fetching roles:', error);
     return c.json({ message: 'Failed to fetch roles' }, 500);
   }
 });
@@ -80,7 +81,7 @@ rolesRoutes.post('/', zValidator('json', roleSchema), async (c) => {
       }
     }, 201);
   } catch (error) {
-    console.error('Error creating role:', error);
+    logger.error('Error creating role:', error);
     return c.json({ message: 'Failed to create role' }, 500);
   }
 });
@@ -127,7 +128,7 @@ rolesRoutes.put('/:id', zValidator('json', roleSchema), async (c) => {
       }
     });
   } catch (error) {
-    console.error('Error updating role:', error);
+    logger.error('Error updating role:', error);
     return c.json({ message: 'Failed to update role' }, 500);
   }
 });
@@ -156,7 +157,7 @@ rolesRoutes.delete('/:id', async (c) => {
     await prisma.tbRoles.delete({ where: { fdId: id } });
     return c.json({ message: 'Role deleted successfully' });
   } catch (error) {
-    console.error('Error deleting role:', error);
+    logger.error('Error deleting role:', error);
     return c.json({ message: 'Failed to delete role' }, 500);
   }
 });

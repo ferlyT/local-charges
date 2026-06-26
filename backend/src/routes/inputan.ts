@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { prisma } from '../db/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { logger } from '../lib/logger';
 
 const inputanRoutes = new Hono();
 
@@ -15,7 +16,7 @@ inputanRoutes.get('/', async (c) => {
     
     return c.json(results);
   } catch (error) {
-    console.error('Error fetching inputan:', error);
+    logger.error('Error fetching inputan:', error);
     return c.json({ message: 'Failed to fetch data' }, 500);
   }
 });
