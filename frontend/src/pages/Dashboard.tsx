@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLocalCharges } from '../hooks/useLocalCharges';
 import { useLocalChargesStats } from '../hooks/useLocalChargesStats';
-import { Search, Eye, Plus, ArrowRight, ClipboardList, LayoutList, LayoutGrid, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Search, Eye, Plus, ArrowRight, ClipboardList, LayoutList, LayoutGrid, ChevronUp, ChevronDown, ChevronsUpDown, User, Clock } from 'lucide-react';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../stores/authStore';
 import AnalyticsSection from '../components/AnalyticsSection';
@@ -382,6 +382,16 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mt-auto pt-4 border-t border-secondary/10">
+                      <div className="flex justify-between items-center mb-4 px-1 text-[0.7rem] font-medium text-secondary/80">
+                        <div className="flex items-center gap-1.5" title="Author">
+                          <User size={12} />
+                          <span className="truncate max-w-[100px]">{charge.user?.fdNama || 'Unknown'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5" title="Date Created">
+                          <Clock size={12} />
+                          <span>{new Date(charge.fdCreatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        </div>
+                      </div>
                       <Link
                         to={`/form/${charge.fdId}`}
                         className="btn-secondary w-full justify-center text-sm py-2"

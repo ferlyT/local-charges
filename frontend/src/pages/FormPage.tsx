@@ -38,6 +38,7 @@ export default function FormPage() {
   const [lampiranItems, setLampiranItems] = useState<Lampiran[]>([]);
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'items' | 'attachments'>('items');
 
   useEffect(() => {
     if (isEdit) {
@@ -224,23 +225,60 @@ export default function FormPage() {
           </div>
         </div>
 
-        {/* Details Form Grid Wrapper */}
-        <div className="card">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-[1.1rem] font-semibold text-primary">Items & References</h2>
-              <p className="text-secondary text-xs mt-0.5">Specify customer and relevant tracking identifiers.</p>
-            </div>
+        {/* Tab Bar */}
+        <div className="flex items-center gap-2 border-b border-secondary/20 pb-0">
+          <button
+            type="button"
+            onClick={() => setActiveTab('items')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+              activeTab === 'items' 
+                ? 'border-tertiary text-tertiary' 
+                : 'border-transparent text-secondary hover:text-primary'
+            }`}
+          >
+            Items & References
+          </button>
+          {isEdit && (
             <button
               type="button"
-              onClick={addDetailRow}
-              className="btn bg-tertiary/10 hover:bg-tertiary/20 text-tertiary text-sm py-2 px-3 flex items-center gap-1.5"
+              onClick={() => setActiveTab('attachments')}
+              className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+                activeTab === 'attachments' 
+                  ? 'border-tertiary text-tertiary' 
+                  : 'border-transparent text-secondary hover:text-primary'
+              }`}
             >
-              <Plus size={16} /> Add Row
+              Attachments
+              <span className={`px-1.5 py-0.5 rounded-full text-[0.65rem] ${
+                activeTab === 'attachments' ? 'bg-tertiary/10 text-tertiary' : 'bg-secondary/10 text-secondary'
+              }`}>
+                {lampiranItems.length}
+              </span>
             </button>
-          </div>
-          
-          <div className="space-y-6">
+          )}
+        </div>
+
+        {/* Tab Content Wrapper */}
+        <div className="card">
+          {activeTab === 'items' && (
+            <>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-[1.1rem] font-semibold text-primary">Items & References</h2>
+                  <p className="text-secondary text-xs mt-0.5">Specify customer and relevant tracking identifiers.</p>
+                </div>
+                {canSave && (
+                  <button
+                    type="button"
+                    onClick={addDetailRow}
+                    className="btn bg-tertiary/10 hover:bg-tertiary/20 text-tertiary text-sm py-2 px-3 flex items-center gap-1.5"
+                  >
+                    <Plus size={16} /> Add Row
+                  </button>
+                )}
+              </div>
+              
+              <div className="space-y-6">
             {form.details.map((detail, index) => (
               <div 
                 key={index} 
@@ -253,15 +291,17 @@ export default function FormPage() {
                     </span>
                     <span className="text-[0.95rem] font-semibold text-primary">Item Details</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeDetailRow(index)}
-                    disabled={form.details.length === 1}
-                    className="p-1.5 text-secondary hover:text-tertiary hover:bg-tertiary/10 rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                    title="Remove Item"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {canSave && (
+                    <button
+                      type="button"
+                      onClick={() => removeDetailRow(index)}
+                      disabled={form.details.length === 1}
+                      className="p-1.5 text-secondary hover:text-tertiary hover:bg-tertiary/10 rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                      title="Remove Item"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -354,7 +394,27 @@ export default function FormPage() {
               </div>
             ))}
           </div>
-        </div>
+          </>
+        )}
+
+        {activeTab === 'attachments' && isEdit && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-[1.1rem] font-semibold text-primary">Uploaded Attachments</h2>
+              <p className="text-secondary text-xs mt-0.5">View, download, or edit files uploaded to this charge list.</p>
+            </div>
+            <div className="border-t border-secondary/15 pt-4">
+              <LampiranGrid 
+                localChargesId={Number(id)} 
+                items={lampiranItems} 
+                onRefresh={fetchLampiran}
+                onDelete={handleDeleteLampiran}
+                canEdit={canSave}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
         {/* Action Buttons Sticky-ish row */}
         <div className="flex justify-end gap-3.5">
@@ -377,25 +437,6 @@ export default function FormPage() {
           )}
         </div>
       </form>
-
-      {/* Attachments Card Section */}
-      {isEdit && (
-        <div className="card space-y-6">
-          <div>
-            <h2 className="text-[1.1rem] font-semibold text-primary">Uploaded Attachments</h2>
-            <p className="text-secondary text-xs mt-0.5">View, download, or edit files uploaded to this charge list.</p>
-          </div>
-          <div className="border-t border-secondary/15 pt-4">
-            <LampiranGrid 
-              localChargesId={Number(id)} 
-              items={lampiranItems} 
-              onRefresh={fetchLampiran}
-              onDelete={handleDeleteLampiran}
-              canEdit={canSave}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
