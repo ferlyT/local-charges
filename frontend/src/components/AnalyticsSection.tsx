@@ -3,7 +3,7 @@ import {
   TrendingUp, TrendingDown, FileText, CheckCircle2, Clock,
   Users, BarChart2, Minus
 } from 'lucide-react';
-import type { StatsData } from '../../hooks/useLocalChargesStats';
+import type { StatsData } from '../hooks/useLocalChargesStats';
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({
@@ -64,7 +64,7 @@ function StatCard({
 function MiniBarChart({ data }: { data: StatsData['monthlyTrend'] }) {
   if (!data || data.length === 0) return null;
 
-  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const maxCount = Math.max(...data.map((d: { month: string; count: number }) => d.count), 1);
 
   const monthLabel = (ym: string) => {
     const [year, month] = ym.split('-');
@@ -74,7 +74,7 @@ function MiniBarChart({ data }: { data: StatsData['monthlyTrend'] }) {
 
   return (
     <div className="flex items-end gap-1.5 h-16 w-full">
-      {data.map((d, i) => {
+      {data.map((d: { month: string; count: number }, i: number) => {
         const pct = Math.max((d.count / maxCount) * 100, 4);
         const isLast = i === data.length - 1;
         return (
@@ -152,11 +152,11 @@ function TopCustomersList({ customers }: { customers: StatsData['topCustomers'] 
   if (!customers || customers.length === 0) {
     return <div className="text-center text-secondary text-sm py-4">Belum ada data</div>;
   }
-  const max = Math.max(...customers.map(c => c.count), 1);
+  const max = Math.max(...customers.map((c: { name: string | null; count: number }) => c.count), 1);
 
   return (
     <div className="space-y-2">
-      {customers.map((c, i) => (
+      {customers.map((c: { name: string | null; count: number }, i: number) => (
         <div key={i} className="flex items-center gap-3 group">
           <span className="text-[0.7rem] font-mono font-bold text-secondary/50 w-4 shrink-0">
             {i + 1}
