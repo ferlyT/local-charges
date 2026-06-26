@@ -12,7 +12,6 @@ model tbUsers {
   fdNama      String    @db.VarChar(100)
   fdUsername  String    @unique @db.VarChar(50)
   fdPassword  String    @db.VarChar(255)
-  fdRole      String    @default("user") @db.VarChar(30)
   fdAktif     Boolean   @default(true)
   fdCreatedAt DateTime  @default(now())
   fdAvatar    String?   @db.VarChar(500)

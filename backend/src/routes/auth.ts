@@ -46,7 +46,7 @@ authRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
     return c.json({ message: 'Invalid credentials' }, 401);
   }
 
-  const roleName = user.role?.fdNama || user.fdRole;
+  const roleName = user.role?.fdNama || 'user';
   const permissions = user.role?.permissions?.map(p => p.fdPermission) || [];
 
   const payload = {
@@ -88,14 +88,13 @@ authRoutes.post('/register', zValidator('json', registerSchema), async (c) => {
       fdNama: nama,
       fdUsername: username,
       fdPassword: hashedPassword,
-      fdRole: 'user', // legacy
       fdRoleId: defaultRole?.fdId,
       fdAktif: false, // User needs admin approval to login
     },
     include: { role: true }
   });
 
-  const roleName = newUser.role?.fdNama || newUser.fdRole;
+  const roleName = newUser.role?.fdNama || 'user';
   const permissions = newUser.role?.permissions?.map((p: any) => p.fdPermission) || [];
 
   return c.json({
@@ -124,7 +123,7 @@ authRoutes.put('/profile', zValidator('json', profileSchema), async (c) => {
     include: { role: { include: { permissions: true } } }
   });
 
-  const roleName = updatedUser.role?.fdNama || updatedUser.fdRole;
+  const roleName = updatedUser.role?.fdNama || 'user';
   const permissions = updatedUser.role?.permissions?.map(p => p.fdPermission) || [];
 
   return c.json({

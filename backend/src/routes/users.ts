@@ -21,7 +21,6 @@ usersRoutes.get('/', async (c) => {
         fdId: true,
         fdNama: true,
         fdUsername: true,
-        fdRole: true,
         fdRoleId: true,
         role: { select: { fdNama: true } },
         fdAktif: true,
@@ -34,7 +33,7 @@ usersRoutes.get('/', async (c) => {
     
     const formattedUsers = users.map(u => ({
       ...u,
-      fdRole: u.role?.fdNama || u.fdRole
+      fdRole: u.role?.fdNama || 'user'
     }));
 
     return c.json({
@@ -58,7 +57,6 @@ usersRoutes.get('/:id', async (c) => {
       fdId: true,
       fdNama: true,
       fdUsername: true,
-      fdRole: true,
       fdRoleId: true,
       role: { select: { fdNama: true } },
       fdAktif: true,
@@ -72,7 +70,7 @@ usersRoutes.get('/:id', async (c) => {
     message: 'Success retrieving user',
     data: {
       ...user,
-      fdRole: user.role?.fdNama || user.fdRole
+      fdRole: user.role?.fdNama || 'user'
     }
   });
 });
@@ -104,7 +102,6 @@ usersRoutes.put('/:id/status', zValidator('json', statusSchema), async (c) => {
         fdId: true,
         fdNama: true,
         fdUsername: true,
-        fdRole: true,
         role: { select: { fdNama: true } },
         fdAktif: true,
       }
@@ -114,7 +111,7 @@ usersRoutes.put('/:id/status', zValidator('json', statusSchema), async (c) => {
       message: 'User status updated successfully',
       data: {
         ...updatedUser,
-        fdRole: updatedUser.role?.fdNama || updatedUser.fdRole
+        fdRole: updatedUser.role?.fdNama || 'user'
       }
     });
   } catch (error) {
@@ -150,7 +147,7 @@ usersRoutes.put('/:id/role', zValidator('json', roleSchema), async (c) => {
       message: 'User role updated successfully',
       data: {
         ...updatedUser,
-        fdRole: updatedUser.role?.fdNama || updatedUser.fdRole
+        fdRole: updatedUser.role?.fdNama || 'user'
       }
     });
   } catch (error) {
