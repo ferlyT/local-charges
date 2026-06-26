@@ -1,0 +1,233 @@
+import React, { useState } from 'react';
+import { useAuthStore } from '../stores/authStore';
+import { User as UserIcon, Lock, Save, Camera } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '../lib/api';
+
+export default function ProfilePage() {
+  const { user, setAuth, token } = useAuthStore();
+  const [nama, setNama] = useState(user?.name || '');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingProfile(true);
+    try {
+      const res = await api.put('/auth/profile', { nama, avatar: avatar || null });
+      setAuth(res.data.user, token!);
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    try {
+      await api.put('/auth/password', { currentPassword, newPassword });
+      toast.success('Password updated successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update password');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size should not exceed 5MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    setIsUploadingAvatar(true);
+    const loadingToast = toast.loading('Uploading avatar...');
+    try {
+      const res = await api.post('/lampiran/avatar', formData);
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      const baseUrl = apiUrl.replace('/api/v1', '');
+      const newAvatarUrl = baseUrl + res.data.url;
+      
+      setAvatar(newAvatarUrl);
+      toast.success('Avatar uploaded! Click Save to apply.', { id: loadingToast });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to upload avatar', { id: loadingToast });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-8">
+      <div className="flex items-center gap-4 pb-4 border-b border-secondary/10">
+        <div className="w-12 h-12 bg-tertiary/10 rounded-xl flex items-center justify-center text-tertiary shadow-inner">
+          <UserIcon size={24} />
+        </div>
+        <div>
+          <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-none mb-1">
+            My Profile
+          </h1>
+          <p className="text-secondary text-sm">
+            Manage your personal information and security settings.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Profile Info */}
+        <div className="bg-surface shadow-md border border-secondary/20 rounded-xl p-6">
+          <h2 className="text-lg font-bold text-primary mb-6 flex items-center gap-2">
+            <UserIcon size={20} className="text-tertiary" /> Personal Information
+          </h2>
+          <form onSubmit={handleUpdateProfile} className="space-y-5">
+            <div className="flex items-center gap-6 mb-6">
+              <div 
+                className={`relative group cursor-pointer ${isUploadingAvatar ? 'opacity-50 pointer-events-none' : ''}`}
+                onClick={() => fileInputRef.current?.click()}
+                title="Click to upload new avatar"
+              >
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-neutral/50 border-4 border-surface shadow-sm group-hover:border-tertiary/30 transition-colors">
+                  {avatar ? (
+                     <img src={avatar} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nama || 'User') + '&background=random' }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-secondary uppercase bg-tertiary/10">
+                      {(nama || 'U')[0]}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute bottom-0 right-0 bg-tertiary text-white p-1.5 rounded-full shadow-md group-hover:scale-110 transition-transform">
+                  <Camera size={14} />
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleAvatarUpload} 
+                  accept="image/jpeg,image/png,image/jpg" 
+                  className="hidden" 
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-secondary mb-1 uppercase font-semibold tracking-wider">Username</p>
+                <p className="font-mono text-primary bg-secondary/5 px-3 py-1.5 rounded-md inline-block">@{user?.username}</p>
+                <div className="mt-2">
+                  <span className="text-[0.7rem] bg-tertiary/10 text-tertiary px-2 py-0.5 rounded-full uppercase font-bold tracking-widest">
+                    Role: {user?.role}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">Full Name</label>
+              <input
+                type="text"
+                value={nama}
+                onChange={(e) => setNama(e.target.value)}
+                className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-lg px-4 py-2.5 text-[0.95rem] text-primary outline-none transition-all"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">Avatar URL (Optional)</label>
+              <input
+                type="url"
+                value={avatar}
+                onChange={(e) => setAvatar(e.target.value)}
+                placeholder="https://example.com/avatar.jpg"
+                className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-lg px-4 py-2.5 text-[0.95rem] text-primary outline-none transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isUpdatingProfile}
+              className="w-full bg-tertiary hover:bg-tertiary/90 text-white font-semibold py-2.5 rounded-lg shadow-md shadow-tertiary/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <Save size={18} />
+              {isUpdatingProfile ? 'Saving...' : 'Save Profile'}
+            </button>
+          </form>
+        </div>
+
+        {/* Password Update */}
+        <div className="bg-surface shadow-md border border-secondary/20 rounded-xl p-6">
+          <h2 className="text-lg font-bold text-primary mb-6 flex items-center gap-2">
+            <Lock size={20} className="text-tertiary" /> Change Password
+          </h2>
+          <form onSubmit={handleUpdatePassword} className="space-y-5">
+            <div>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">Current Password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-lg px-4 py-2.5 text-[0.95rem] text-primary outline-none transition-all"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                minLength={6}
+                className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-lg px-4 py-2.5 text-[0.95rem] text-primary outline-none transition-all"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={6}
+                className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-lg px-4 py-2.5 text-[0.95rem] text-primary outline-none transition-all"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isUpdatingPassword}
+              className="w-full bg-neutral/50 border border-secondary/20 hover:bg-neutral/80 text-primary font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+            >
+              <Lock size={18} />
+              {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

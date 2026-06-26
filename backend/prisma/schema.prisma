@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model tbUsers {
+  fdId        Int       @id @default(autoincrement())
+  fdNama      String    @db.VarChar(100)
+  fdUsername  String    @unique @db.VarChar(50)
+  fdPassword  String    @db.VarChar(255)
+  fdRole      String    @default("user") @db.VarChar(30)
+  fdAktif     Boolean   @default(true)
+  fdCreatedAt DateTime  @default(now())
+  fdAvatar    String?   @db.VarChar(500)
+
+  fdRoleId    Int?
+  role        tbRoles?  @relation(fields: [fdRoleId], references: [fdId], onUpdate: NoAction)
+
+  localCharges         tbLocalCharges[]
+  localChargesLampiran tbLocalChargesLampiran[]
+}
+
+model tbRoles {
+  fdId        Int       @id @default(autoincrement())
+  fdNama      String    @unique @db.VarChar(50)
+  fdDeskripsi String?   @db.VarChar(255)
+  fdCreatedAt DateTime  @default(now())
+
+  users       tbUsers[]
+  permissions tbRolePermissions[]
+}
+
+model tbRolePermissions {
+  fdId         Int       @id @default(autoincrement())
+  fdRoleId     Int
+  role         tbRoles   @relation(fields: [fdRoleId], references: [fdId], onDelete: Cascade)
+  fdPermission String    @db.VarChar(100)
+
+  @@unique([fdRoleId, fdPermission])
+}
+
+model tbLocalCharges {
+  fdId           Int       @id @default(autoincrement())
+  fdNomorForm    String    @unique @db.VarChar(30)
+  fdQty          Decimal?  @db.Decimal(10, 3)
+  fdSatuanQty    String?   @default("M3") @db.VarChar(20)
+  fdStatus       Int       @default(1) @db.TinyInt
+  fdDibuat       String?   @db.VarChar(100)
+  fdTglDibuat    DateTime?
+  fdDirequest    String?   @db.VarChar(100)
+  fdTglDirequest DateTime?
+  fdBilling      String?   @db.VarChar(100)
+  fdTglBilling   DateTime?
+  fdAR           String?   @db.VarChar(100)
+  fdTglAR        DateTime?
+  fdDiketahui    String?   @db.VarChar(100)
+  fdTglDiketahui DateTime?
+  
+  fdCreatedBy    Int
+  user           tbUsers   @relation(fields: [fdCreatedBy], references: [fdId], onUpdate: NoAction)
+  
+  fdCreatedAt    DateTime  @default(now())
+  fdUpdatedAt    DateTime  @default(now())
+  fdDeletedAt    DateTime?
+
+  details        tbLocalChargesDetail[]
+  lampiran       tbLocalChargesLampiran[]
+}
+
+model tbLocalChargesDetail {
+  fdId             Int            @id @default(autoincrement())
+  
+  fdLocalChargesId Int
+  localCharges     tbLocalCharges @relation(fields: [fdLocalChargesId], references: [fdId], onDelete: Cascade)
+  
+  fdNo             Int            @db.TinyInt
+  fdNamaCustomer   String         @db.VarChar(150)
+  fdMarking        String?        @db.VarChar(100)
+  fdNoReceipt      String?        @db.VarChar(100)
+  fdNoBilling      String?        @db.VarChar(100)
+  fdKeterangan     String?        @db.VarChar(500)
+  fdNoInputan      String?        @db.VarChar(100)
+}
+
+model tbLocalChargesLampiran {
+  fdId             Int            @id @default(autoincrement())
+  
+  fdLocalChargesId Int
+  localCharges     tbLocalCharges @relation(fields: [fdLocalChargesId], references: [fdId], onDelete: Cascade)
+  
+  fdNamaFile       String         @db.VarChar(255)
+  fdNamaFileSimpan String         @db.VarChar(255)
+  fdMimeType       String         @db.VarChar(100)
+  fdUkuranBytes    BigInt
+  fdPath           String         @db.VarChar(500)
+  
+  fdUploadedBy     Int
+  user             tbUsers        @relation(fields: [fdUploadedBy], references: [fdId], onUpdate: NoAction)
+  
+  fdUploadedAt     DateTime       @default(now())
+  fdKeterangan     String?        @db.VarChar(255)
+}
