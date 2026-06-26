@@ -16,15 +16,16 @@ interface LampiranGridProps {
   items: Lampiran[];
   onRefresh: () => void;
   onDelete: (id: number) => void;
+  canEdit?: boolean;
 }
 
-export default function LampiranGrid({ localChargesId, items, onRefresh, onDelete }: LampiranGridProps) {
+export default function LampiranGrid({ localChargesId, items, onRefresh, onDelete, canEdit = true }: LampiranGridProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
     <div className="space-y-6">
       {/* Upload Area */}
-      <LampiranUploader localChargesId={localChargesId} onUploadSuccess={onRefresh} />
+      {canEdit && <LampiranUploader localChargesId={localChargesId} onUploadSuccess={onRefresh} />}
 
       {/* Grid */}
       {items.length > 0 ? (
@@ -33,7 +34,7 @@ export default function LampiranGrid({ localChargesId, items, onRefresh, onDelet
             <LampiranItem 
               key={item.fdId} 
               item={item} 
-              onDelete={onDelete}
+              onDelete={canEdit ? onDelete : undefined}
               onClick={() => setLightboxIndex(index)}
             />
           ))}

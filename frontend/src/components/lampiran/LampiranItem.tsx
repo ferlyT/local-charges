@@ -12,7 +12,7 @@ interface Lampiran {
 
 interface LampiranItemProps {
   item: Lampiran;
-  onDelete: (id: number) => void;
+  onDelete?: (id: number) => void;
   onClick: () => void;
 }
 
@@ -115,16 +115,18 @@ export default function LampiranItem({ item, onDelete, onClick }: LampiranItemPr
           >
             <Download size={16} />
           </button>
-          <button 
-            className="p-1.5 bg-surface text-tertiary rounded-full hover:bg-neutral transition"
-            title="Delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item.fdId);
-            }}
-          >
-            <Trash2 size={16} />
-          </button>
+          {onDelete && (
+            <button 
+              className="p-1.5 bg-surface text-tertiary rounded-full hover:bg-neutral transition"
+              title="Delete"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item.fdId);
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
         </div>
       </div>
 

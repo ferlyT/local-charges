@@ -154,6 +154,10 @@ export default function FormPage() {
     }
   };
 
+  const canSave = 
+    (isEdit && (currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:edit'))) || 
+    (!isEdit && (currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:create')));
+
   if (isLoading) {
     return (
       <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-8">
@@ -359,10 +363,9 @@ export default function FormPage() {
             onClick={() => navigate(-1)}
             className="btn-secondary"
           >
-            Cancel
+            {canSave ? 'Cancel' : 'Back'}
           </button>
-          {((isEdit && (currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:edit'))) || 
-            (!isEdit && (currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:create')))) && (
+          {canSave && (
             <button
               type="submit"
               disabled={isSaving}
@@ -388,6 +391,7 @@ export default function FormPage() {
               items={lampiranItems} 
               onRefresh={fetchLampiran}
               onDelete={handleDeleteLampiran}
+              canEdit={canSave}
             />
           </div>
         </div>
