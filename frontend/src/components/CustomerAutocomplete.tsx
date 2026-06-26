@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
-import { useDebounce } from '../hooks/useDebounce';
+import React from 'react';
+import { useAutocomplete } from '../hooks/useAutocomplete';
 
 interface CustomerAutocompleteProps {
   value: string;
@@ -10,60 +9,20 @@ interface CustomerAutocompleteProps {
 }
 
 export default function CustomerAutocomplete({ value, onChange, required, disabled }: CustomerAutocompleteProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState(value || '');
-  const [options, setOptions] = useState<{ fdCustName: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const debouncedSearch = useDebounce(search, 300);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Sync internal search state with external value if it changes
-  useEffect(() => {
-    setSearch(value || '');
-  }, [value]);
-
-  // Fetch from DB when debounced search changes
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setIsLoading(true);
-      try {
-        const response = await api.get(`/customers?search=${encodeURIComponent(debouncedSearch)}`);
-        setOptions(response.data);
-      } catch (error) {
-        console.error('Failed to fetch customers:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchCustomers();
-    }
-  }, [debouncedSearch, isOpen]);
-
-  // Click outside listener to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (custName: string) => {
-    setSearch(custName);
-    onChange(custName);
-    setIsOpen(false);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.toUpperCase();
-    setSearch(val);
-    onChange(val); // Also update the actual form state so it's not strictly restricted to dropdown
-    setIsOpen(true);
-  };
+  const {
+    isOpen,
+    setIsOpen,
+    search,
+    options,
+    isLoading,
+    wrapperRef,
+    handleChange,
+    handleSelect
+  } = useAutocomplete<{ fdCustName: string }>({
+    endpoint: '/customers',
+    value,
+    onChange
+  });
 
   return (
     <div ref={wrapperRef} className="relative w-full">
@@ -72,7 +31,7 @@ export default function CustomerAutocomplete({ value, onChange, required, disabl
         disabled={disabled}
         type="text"
         value={search}
-        onChange={handleChange}
+        onChange={(e) => handleChange(e.target.value)}
         onFocus={() => !disabled && setIsOpen(true)}
         className={`block w-full rounded-md border border-secondary/30 px-3 py-2 text-[0.95rem] focus:outline-none focus:ring-1 focus:ring-tertiary focus:border-tertiary ${
           disabled 

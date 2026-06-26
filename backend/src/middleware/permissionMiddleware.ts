@@ -1,7 +1,8 @@
 import { prisma } from '../db/prisma';
+import type { Context, Next } from 'hono';
 
 export const requirePermission = (requiredPermission: string) => {
-  return async (c: any, next: any) => {
+  return async (c: Context, next: Next) => {
     const payload = c.get('jwtPayload');
     const roleName = payload.role;
     

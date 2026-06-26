@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import { Navigate } from 'react-router-dom';
+import { hasPermission } from '../lib/permissions';
 
 interface RoleType {
   fdId: number;
@@ -36,7 +37,7 @@ export default function RolesPage() {
     permissions: [] as string[]
   });
 
-  if (currentUser?.role !== 'admin' && !currentUser?.permissions?.includes('roles:manage')) {
+  if (!hasPermission(currentUser, 'roles:manage')) {
     return <Navigate to="/" replace />;
   }
 

@@ -3,6 +3,7 @@ import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { LogOut, LayoutDashboard, FileText, ChevronLeft, ChevronRight, Users, UserCircle, Shield } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { hasPermission } from '../lib/permissions';
 
 export default function Layout() {
   const user = useAuthStore((state) => state.user);
@@ -20,10 +21,10 @@ export default function Layout() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'New Form', path: '/new', icon: FileText },
     { name: 'My Profile', path: '/profile', icon: UserCircle },
-    ...((user?.role === 'admin' || user?.permissions?.includes('users:manage')) ? [
+    ...((hasPermission(user, 'users:manage')) ? [
       { name: 'Manage Users', path: '/users', icon: Users }
     ] : []),
-    ...((user?.role === 'admin' || user?.permissions?.includes('roles:manage')) ? [
+    ...((hasPermission(user, 'roles:manage')) ? [
       { name: 'Manage Roles', path: '/roles', icon: Shield }
     ] : []),
   ];

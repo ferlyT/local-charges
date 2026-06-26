@@ -7,10 +7,8 @@ import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../stores/authStore';
 import AnalyticsSection from '../components/AnalyticsSection';
 
-const statusMap: Record<number, { label: string; className: string }> = {
-  1: { label: 'Draft', className: 'badge-draft' },
-  2: { label: 'Done', className: 'badge-done' },
-};
+import { hasPermission } from '../lib/permissions';
+import { statusMap } from '../lib/constants';
 
 function SortIcon({ field, sortBy, sortOrder }: { field: string; sortBy: string; sortOrder: string }) {
   if (sortBy !== field) return <ChevronsUpDown size={14} className="text-secondary/40 group-hover:text-secondary/70" />;
@@ -26,6 +24,7 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('fdCreatedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [limit, setLimit] = useState(10);
+  const [showAnalytics, setShowAnalytics] = useState(true);
 
   const currentUser = useAuthStore(state => state.user);
   const { data: stats, isLoading: statsLoading } = useLocalChargesStats();
@@ -55,7 +54,7 @@ export default function Dashboard() {
             Manage, filter, and track domestic operational charges and invoicing references.
           </p>
         </div>
-        {(currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:create')) && (
+        {hasPermission(currentUser, 'local_charges:create') && (
           <Link
             to="/new"
             className="btn-primary inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99]"
@@ -67,10 +66,33 @@ export default function Dashboard() {
       </div>
 
       {/* Analytics Section */}
-      <AnalyticsSection stats={stats} isLoading={statsLoading} />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[1.2rem] font-semibold text-primary">Overview</h2>
+          <button 
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className="text-sm font-medium text-secondary hover:text-primary flex items-center gap-1.5 transition-colors"
+          >
+            {showAnalytics ? (
+              <><ChevronUp size={16} /> Hide Analytics</>
+            ) : (
+              <><ChevronDown size={16} /> Show Analytics</>
+            )}
+          </button>
+        </div>
+        <div 
+          className={`grid transition-all duration-300 ease-in-out ${
+            showAnalytics ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <AnalyticsSection stats={stats} isLoading={statsLoading} />
+          </div>
+        </div>
+      </div>
 
       {/* Modern Card for Search/Filter */}
-      <div className="card p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="card p-4 flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-4 z-20 shadow-lg border-secondary/20 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
         <div className="relative w-full flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary">
             <Search size={18} />
@@ -217,7 +239,7 @@ export default function Dashboard() {
                         <p className="text-secondary text-sm leading-relaxed mb-4">
                           We couldn't find any local charges matching your search parameters. Try adjusting your query or create a new form.
                         </p>
-                        {(currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:create')) && (
+                        {hasPermission(currentUser, 'local_charges:create') && (
                           <Link to="/new" className="btn-secondary py-2 px-4 text-sm flex items-center gap-1.5">
                             <Plus size={16} /> Create Form
                           </Link>
@@ -334,7 +356,7 @@ export default function Dashboard() {
                   <p className="text-secondary text-sm leading-relaxed mb-4">
                     We couldn't find any local charges matching your search parameters. Try adjusting your query or create a new form.
                   </p>
-                  {(currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:create')) && (
+                  {hasPermission(currentUser, 'local_charges:create') && (
                     <Link to="/new" className="btn-secondary py-2 px-4 text-sm flex items-center gap-1.5">
                       <Plus size={16} /> Create Form
                     </Link>

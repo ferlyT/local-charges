@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../db/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { requirePermission } from '../middleware/permissionMiddleware';
 
 const usersRoutes = new Hono();
 
@@ -10,15 +11,7 @@ const usersRoutes = new Hono();
 usersRoutes.use('*', authMiddleware);
 
 // Middleware to check if user has manage users permission
-const requireManageUsers = async (c: any, next: any) => {
-  const payload = c.get('jwtPayload');
-  if (payload.role !== 'admin' && !payload.permissions?.includes('users:manage')) {
-    return c.json({ message: 'Forbidden. User management permission required.' }, 403);
-  }
-  await next();
-};
-
-usersRoutes.use('*', requireManageUsers);
+usersRoutes.use('*', requirePermission('users:manage'));
 
 // GET /api/v1/users - List all users
 usersRoutes.get('/', async (c) => {

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import { Navigate } from 'react-router-dom';
+import { hasPermission } from '../lib/permissions';
 
 interface UserType {
   fdId: number;
@@ -25,7 +26,7 @@ export default function Users() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = React.useState('');
 
-  if (currentUser?.role !== 'admin' && !currentUser?.permissions?.includes('users:manage')) {
+  if (!hasPermission(currentUser, 'users:manage')) {
     return <Navigate to="/" replace />;
   }
 

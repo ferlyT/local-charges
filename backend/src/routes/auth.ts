@@ -4,8 +4,15 @@ import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../db/prisma';
 import bcrypt from 'bcrypt';
 import { sign } from 'hono/jwt';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { serializeUser } from '../lib/userSerializer';
 
 const authRoutes = new Hono();
+
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL ERROR: JWT_SECRET is not defined.');
+}
+const secret = process.env.JWT_SECRET;
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -46,24 +53,16 @@ authRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
     sub: user.fdId.toString(),
     username: user.fdUsername,
     role: roleName,
-    permissions: permissions, // Optionally put in JWT, though large. We can just send in response.
+    permissions: permissions,
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8, // 8 hours
   };
 
-  const secret = process.env.JWT_SECRET || 'secret';
   const token = await sign(payload, secret);
 
   return c.json({
     message: 'Login successful',
     token,
-    user: {
-      id: user.fdId,
-      name: user.fdNama,
-      username: user.fdUsername,
-      role: roleName,
-      permissions: permissions,
-      avatar: user.fdAvatar,
-    },
+    user: serializeUser(user, roleName, permissions),
   });
 });
 
@@ -101,20 +100,11 @@ authRoutes.post('/register', zValidator('json', registerSchema), async (c) => {
 
   return c.json({
     message: 'Registration successful',
-    user: {
-      id: newUser.fdId,
-      name: newUser.fdNama,
-      username: newUser.fdUsername,
-      role: roleName,
-      permissions: permissions,
-      avatar: newUser.fdAvatar,
-    },
+    user: serializeUser(newUser, roleName, permissions),
   }, 201);
 });
 
 // Protected routes for user profile management
-import { authMiddleware } from '../middleware/authMiddleware';
-
 authRoutes.use('/profile', authMiddleware);
 authRoutes.use('/password', authMiddleware);
 
@@ -139,14 +129,7 @@ authRoutes.put('/profile', zValidator('json', profileSchema), async (c) => {
 
   return c.json({
     message: 'Profile updated successfully',
-    user: {
-      id: updatedUser.fdId,
-      name: updatedUser.fdNama,
-      username: updatedUser.fdUsername,
-      role: roleName,
-      permissions: permissions,
-      avatar: updatedUser.fdAvatar,
-    },
+    user: serializeUser(updatedUser, roleName, permissions),
   });
 });
 

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import api from '../lib/api';
-import { useDebounce } from '../hooks/useDebounce';
+import React from 'react';
+import { useAutocomplete } from '../hooks/useAutocomplete';
 
 export interface InputanData {
   fdNoInputan: string;
@@ -18,60 +17,26 @@ interface InputanAutocompleteProps {
 }
 
 export default function InputanAutocomplete({ value, onChange, onSelect, required }: InputanAutocompleteProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState(value || '');
-  const [options, setOptions] = useState<InputanData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const debouncedSearch = useDebounce(search, 300);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const {
+    isOpen,
+    setIsOpen,
+    search,
+    setSearch,
+    options,
+    isLoading,
+    wrapperRef,
+    handleChange
+  } = useAutocomplete<InputanData>({
+    endpoint: '/inputan',
+    value,
+    onChange
+  });
 
-  // Sync internal search state with external value if it changes
-  useEffect(() => {
-    setSearch(value || '');
-  }, [value]);
-
-  // Fetch from DB when debounced search changes
-  useEffect(() => {
-    const fetchInputan = async () => {
-      setIsLoading(true);
-      try {
-        const response = await api.get(`/inputan?search=${encodeURIComponent(debouncedSearch)}`);
-        setOptions(response.data);
-      } catch (error) {
-        console.error('Failed to fetch inputan:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchInputan();
-    }
-  }, [debouncedSearch, isOpen]);
-
-  // Click outside listener to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (data: InputanData) => {
+  const handleSelectLocal = (data: InputanData) => {
     setSearch(data.fdNoInputan);
     onChange(data.fdNoInputan);
     onSelect(data);
     setIsOpen(false);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.toUpperCase();
-    setSearch(val);
-    onChange(val);
-    setIsOpen(true);
   };
 
   return (
@@ -80,7 +45,7 @@ export default function InputanAutocomplete({ value, onChange, onSelect, require
         required={required}
         type="text"
         value={search}
-        onChange={handleChange}
+        onChange={(e) => handleChange(e.target.value)}
         onFocus={() => setIsOpen(true)}
         className="block w-full rounded-md border border-secondary/30 bg-surface px-3 py-2 text-[0.95rem] text-primary focus:border-tertiary focus:outline-none focus:ring-1 focus:ring-tertiary"
         placeholder="Search No. Inputan..."
@@ -96,7 +61,7 @@ export default function InputanAutocomplete({ value, onChange, onSelect, require
               {options.map((opt) => (
                 <li
                   key={opt.fdNoInputan}
-                  onClick={() => handleSelect(opt)}
+                  onClick={() => handleSelectLocal(opt)}
                   className="px-3 py-2 text-[0.95rem] cursor-pointer hover:bg-neutral text-primary"
                 >
                   <div className="font-medium text-tertiary">{opt.fdNoInputan}</div>

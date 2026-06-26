@@ -4,9 +4,10 @@ import { Plus, Trash2, Save, ArrowLeft, Clock, User, Hash } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
-import LampiranGrid, { type Lampiran } from '../components/lampiran/LampiranGrid';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import InputanAutocomplete from '../components/InputanAutocomplete';
+import LampiranGrid, { type Lampiran } from '../components/lampiran/LampiranGrid';
+import { hasPermission } from '../lib/permissions';
 
 interface Detail {
   fdNamaCustomer: string;
@@ -156,8 +157,8 @@ export default function FormPage() {
   };
 
   const canSave = 
-    (isEdit && (currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:edit'))) || 
-    (!isEdit && (currentUser?.role === 'admin' || currentUser?.permissions?.includes('local_charges:create')));
+    (isEdit && hasPermission(currentUser, 'local_charges:edit')) || 
+    (!isEdit && hasPermission(currentUser, 'local_charges:create'));
 
   if (isLoading) {
     return (
