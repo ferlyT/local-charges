@@ -75,7 +75,7 @@ export default function RecycleBin() {
   };
 
   const confirmRestore = () => {
-    if (restoreId) {
+    if (restoreId !== null) {
       restoreMutation.mutate(restoreId);
       setRestoreId(null);
     }
@@ -86,7 +86,7 @@ export default function RecycleBin() {
   };
 
   const confirmPermanentDelete = () => {
-    if (deleteId) {
+    if (deleteId !== null) {
       permanentDeleteMutation.mutate(deleteId);
       setDeleteId(null);
     }
@@ -235,6 +235,29 @@ export default function RecycleBin() {
           </div>
         )}
       </div>
+
+      {/* Custom Confirm Modals */}
+      <ConfirmModal
+        isOpen={restoreId !== null}
+        title={t('rb_confirm_restore')}
+        message={t('rb_confirm_restore')}
+        confirmText="Restore"
+        cancelText={t('btn_cancel') || 'Cancel'}
+        onConfirm={confirmRestore}
+        onCancel={() => setRestoreId(null)}
+        isDestructive={false}
+      />
+
+      <ConfirmModal
+        isOpen={deleteId !== null}
+        title={t('rb_delete_btn')}
+        message={t('rb_confirm_del')}
+        confirmText={t('rb_delete_btn')}
+        cancelText={t('btn_cancel') || 'Cancel'}
+        onConfirm={confirmPermanentDelete}
+        onCancel={() => setDeleteId(null)}
+        isDestructive={true}
+      />
     </div>
   );
 }

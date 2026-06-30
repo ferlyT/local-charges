@@ -160,7 +160,7 @@ export default function RolesPage() {
   };
 
   const confirmDelete = () => {
-    if (roleToDelete) {
+    if (roleToDelete !== null) {
       deleteRoleMutation.mutate(roleToDelete.fdId);
     }
   };

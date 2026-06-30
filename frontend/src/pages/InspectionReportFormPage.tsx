@@ -115,7 +115,7 @@ export default function InspectionReportFormPage() {
   };
 
   const confirmDeleteLampiran = async () => {
-    if (!attToDelete) return;
+    if (attToDelete === null) return;
     try {
       await api.delete(`/lampiran/${attToDelete}`);
       fetchLampiran();
