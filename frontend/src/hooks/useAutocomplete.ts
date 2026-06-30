@@ -8,9 +8,10 @@ interface UseAutocompleteOptions<T> {
   onChange: (val: string) => void;
   debounceMs?: number;
   isPaginated?: boolean;
+  extraParams?: Record<string, string>;
 }
 
-export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300, isPaginated = false }: UseAutocompleteOptions<T>) {
+export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300, isPaginated = false, extraParams = {} }: UseAutocompleteOptions<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(value || '');
   const [options, setOptions] = useState<T[]>([]);
@@ -46,6 +47,12 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
         if (isPaginated) {
           url += `&page=${page}&limit=20`;
         }
+        // Append any extra params (e.g. markingCode, custSearch)
+        Object.entries(extraParams).forEach(([key, val]) => {
+          if (val !== undefined && val !== '') {
+            url += `&${encodeURIComponent(key)}=${encodeURIComponent(val)}`;
+          }
+        });
         
         const response = await api.get(url);
         
@@ -73,7 +80,7 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
     if (isOpen) {
       fetchOptions();
     }
-  }, [debouncedSearch, isOpen, endpoint, page, isPaginated]);
+  }, [debouncedSearch, isOpen, endpoint, page, isPaginated, JSON.stringify(extraParams)]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

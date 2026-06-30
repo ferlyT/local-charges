@@ -259,6 +259,8 @@ export const translations = {
     mc_scroll_more: 'Scroll for more',
     mc_all_loaded: 'All data loaded',
     mc_no_results: 'No results found',
+    mc_filter_mode: 'Marking: {marking} → Customer: "{cust}"',
+    mc_filter_hint: 'Tip: type a space after marking code to filter by customer name',
 
     // === INSPECTION REPORT FORM ===
     ir_form_title_new:          'New Inspection Report',
@@ -573,6 +575,8 @@ export const translations = {
     mc_scroll_more: 'Gulir untuk lebih banyak',
     mc_all_loaded: 'Semua data dimuat',
     mc_no_results: 'Tidak ada hasil',
+    mc_filter_mode: 'Kode: {marking} → Customer: "{cust}"',
+    mc_filter_hint: 'Tips: ketik spasi setelah kode marking untuk filter nama customer',
 
     // === INSPECTION REPORT FORM ===
     ir_form_title_new:          'Laporan BAP Baru',

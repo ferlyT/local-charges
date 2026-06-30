@@ -131,20 +131,33 @@ inspectionReportRoutes.get(
   requirePermission('inspection_reports:read'),
   async (c) => {
     const search = c.req.query('search')?.trim() ?? '';
+    const markingCode = c.req.query('markingCode')?.trim() ?? '';
+    const custSearch = c.req.query('custSearch')?.trim() ?? '';
     const page = Number(c.req.query('page')) || 1;
     const limit = Number(c.req.query('limit')) || 20;
 
     try {
+      let whereClause: any;
+
+      if (markingCode) {
+        // Two-stage filter mode: markingCode is fixed, optionally filter by custSearch
+        whereClause = {
+          fdMarkingCode: { startsWith: markingCode },
+          ...(custSearch ? { fdCustName: { contains: custSearch } } : {}),
+        };
+      } else if (search) {
+        // Standard OR search across all relevant fields
+        whereClause = {
+          OR: [
+            { fdCustName: { contains: search } },
+            { fdMarkingCode: { startsWith: search } },
+            { fdMarkingNo: { startsWith: search } },
+          ],
+        };
+      }
+
       const results = await prisma.vwtbEntryListCustomer.findMany({
-        where: search
-          ? {
-              OR: [
-                { fdCustName: { contains: search } },
-                { fdMarkingCode: { startsWith: search } },
-                { fdMarkingNo: { startsWith: search } },
-              ]
-            }
-          : undefined,
+        where: whereClause,
         orderBy: [
           { fdCustName: 'asc' },
           { fdMarkingCode: 'asc' },

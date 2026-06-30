@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -16,7 +17,24 @@ interface MarkingCodeAutocompleteProps {
   required?: boolean;
 }
 
+const DELIMITER = ' ';
+
+function parseInput(raw: string): { markingPart: string; custPart: string; isTwoStage: boolean } {
+  const delimIdx = raw.indexOf(DELIMITER);
+  if (delimIdx === -1) {
+    return { markingPart: '', custPart: '', isTwoStage: false };
+  }
+  const markingPart = raw.slice(0, delimIdx).trim();
+  const custPart = raw.slice(delimIdx + 1); // keep trailing chars for real-time filtering
+  return { markingPart, custPart, isTwoStage: true };
+}
+
 export default function MarkingCodeAutocomplete({ value, onChange, onSelect, required }: MarkingCodeAutocompleteProps) {
+  const { t } = useTranslation();
+
+  const [extraParams, setExtraParams] = useState<Record<string, string>>({});
+  const [filterMode, setFilterMode] = useState<{ marking: string; cust: string } | null>(null);
+
   const {
     isOpen,
     setIsOpen,
@@ -27,15 +45,14 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
     isLoadingMore,
     hasMore,
     wrapperRef,
-    handleChange,
     loadMore
   } = useAutocomplete<EntryListData>({
     endpoint: '/inspection-reports/lookup',
     value,
     onChange,
-    isPaginated: true
+    isPaginated: true,
+    extraParams,
   });
-  const { t } = useTranslation();
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop <= e.currentTarget.clientHeight + 10;
@@ -44,11 +61,30 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
     }
   };
 
+  const handleChange = useCallback((raw: string) => {
+    const upperVal = raw.toUpperCase();
+    setSearch(upperVal);
+    onChange(upperVal);
+    setIsOpen(true);
+
+    const { markingPart, custPart, isTwoStage } = parseInput(upperVal);
+    if (isTwoStage && markingPart) {
+      setExtraParams({ markingCode: markingPart, custSearch: custPart.trim() });
+      setFilterMode({ marking: markingPart, cust: custPart.trim() });
+    } else {
+      setExtraParams({});
+      setFilterMode(null);
+    }
+  }, [onChange, setSearch, setIsOpen]);
+
   const handleSelectLocal = (data: EntryListData) => {
-    setSearch(data.fdMarkingCode);
-    onChange(data.fdMarkingCode);
+    const displayValue = data.fdMarkingCode;
+    setSearch(displayValue);
+    onChange(displayValue);
     onSelect(data);
     setIsOpen(false);
+    setExtraParams({});
+    setFilterMode(null);
   };
 
   return (
@@ -64,11 +100,26 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
         autoComplete="off"
       />
 
+      {/* Hint text below input */}
+      {!filterMode && (
+        <p className="mt-1 text-[0.68rem] text-secondary/70">{t('mc_filter_hint')}</p>
+      )}
+
       {isOpen && (
         <div
           className="absolute z-10 w-full mt-1 bg-surface border border-secondary/20 rounded-md shadow-lg max-h-60 overflow-auto"
           onScroll={handleScroll}
         >
+          {/* Filter mode label banner */}
+          {filterMode && (
+            <div className="px-3 py-1.5 text-[0.7rem] font-medium bg-tertiary/10 text-tertiary border-b border-tertiary/20 flex items-center gap-1.5">
+              <span>🔍</span>
+              <span>
+                {t('mc_filter_mode', { marking: filterMode.marking, cust: filterMode.cust || '…' })}
+              </span>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="p-3 text-[0.95rem] text-secondary text-center">{t('state_loading')}</div>
           ) : options.length > 0 ? (
