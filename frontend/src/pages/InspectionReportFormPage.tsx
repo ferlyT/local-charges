@@ -134,8 +134,8 @@ export default function InspectionReportFormPage() {
   };
 
   const canSave = 
-    (isEdit && hasPermission(currentUser, 'local_charges:edit')) || 
-    (!isEdit && hasPermission(currentUser, 'local_charges:create'));
+    (isEdit && hasPermission(currentUser, 'inspection_reports:edit')) || 
+    (!isEdit && hasPermission(currentUser, 'inspection_reports:create'));
 
   if (isLoading) {
     return (
@@ -370,7 +370,7 @@ export default function InspectionReportFormPage() {
         {/* Action Buttons Sticky-ish row */}
         <div className="flex justify-between items-center">
           <div>
-            {isEdit && hasPermission(currentUser, 'local_charges:delete') && (
+            {isEdit && hasPermission(currentUser, 'inspection_reports:delete') && (
               <button
                 type="button"
                 onClick={handleDeleteForm}

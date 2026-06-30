@@ -22,6 +22,8 @@ export default function Layout() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     ...((hasPermission(user, 'local_charges:create')) ? [
       { name: 'Local Charge', path: '/new', icon: FileText },
+    ] : []),
+    ...((hasPermission(user, 'inspection_reports:read')) ? [
       { name: 'Inspection Reports', path: '/inspection-reports', icon: ClipboardList },
     ] : []),
     ...((hasPermission(user, 'local_charges:delete')) ? [

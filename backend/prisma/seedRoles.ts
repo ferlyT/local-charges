@@ -2,9 +2,26 @@
 import { prisma } from '../src/db/prisma';
 
 async function main() {
+  // Hapus semua permission lama agar di-seed ulang dengan yang baru
+  await prisma.tbRolePermissions.deleteMany();
+
   const adminRole = await prisma.tbRoles.upsert({
     where: { fdNama: 'admin' },
-    update: {},
+    update: {
+      permissions: {
+        create: [
+          { fdPermission: 'local_charges:read' },
+          { fdPermission: 'local_charges:create' },
+          { fdPermission: 'local_charges:edit' },
+          { fdPermission: 'local_charges:delete' },
+          { fdPermission: 'inspection_reports:read' },
+          { fdPermission: 'inspection_reports:create' },
+          { fdPermission: 'inspection_reports:edit' },
+          { fdPermission: 'inspection_reports:delete' },
+          { fdPermission: 'users:manage' },
+        ],
+      },
+    },
     create: {
       fdNama: 'admin',
       fdDeskripsi: 'Administrator system',
@@ -14,6 +31,10 @@ async function main() {
           { fdPermission: 'local_charges:create' },
           { fdPermission: 'local_charges:edit' },
           { fdPermission: 'local_charges:delete' },
+          { fdPermission: 'inspection_reports:read' },
+          { fdPermission: 'inspection_reports:create' },
+          { fdPermission: 'inspection_reports:edit' },
+          { fdPermission: 'inspection_reports:delete' },
           { fdPermission: 'users:manage' },
         ],
       },
@@ -22,7 +43,18 @@ async function main() {
 
   const userRole = await prisma.tbRoles.upsert({
     where: { fdNama: 'user' },
-    update: {},
+    update: {
+      permissions: {
+        create: [
+          { fdPermission: 'local_charges:read' },
+          { fdPermission: 'local_charges:create' },
+          { fdPermission: 'local_charges:edit' },
+          { fdPermission: 'inspection_reports:read' },
+          { fdPermission: 'inspection_reports:create' },
+          { fdPermission: 'inspection_reports:edit' },
+        ],
+      },
+    },
     create: {
       fdNama: 'user',
       fdDeskripsi: 'Regular user',
@@ -31,6 +63,9 @@ async function main() {
           { fdPermission: 'local_charges:read' },
           { fdPermission: 'local_charges:create' },
           { fdPermission: 'local_charges:edit' },
+          { fdPermission: 'inspection_reports:read' },
+          { fdPermission: 'inspection_reports:create' },
+          { fdPermission: 'inspection_reports:edit' },
         ],
       },
     },

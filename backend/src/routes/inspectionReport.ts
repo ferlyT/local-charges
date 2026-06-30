@@ -26,7 +26,7 @@ const createInspectionReportSchema = z.object({
 });
 
 // GET /lookup - Lookup entry list data
-inspectionReportRoutes.get('/lookup', async (c) => {
+inspectionReportRoutes.get('/lookup', requirePermission('inspection_reports:read'), async (c) => {
   const search = c.req.query('search') || '';
   try {
     const results = await prisma.vwtbEntryListCustomer.findMany({
@@ -47,7 +47,7 @@ inspectionReportRoutes.get('/lookup', async (c) => {
 });
 
 // GET list with pagination and search
-inspectionReportRoutes.get('/', async (c) => {
+inspectionReportRoutes.get('/', requirePermission('inspection_reports:read'), async (c) => {
   const page = Number(c.req.query('page')) || 1;
   const limit = Number(c.req.query('limit')) || 20;
   const search = c.req.query('search') || '';
@@ -101,7 +101,7 @@ inspectionReportRoutes.get('/', async (c) => {
 });
 
 // GET /trash - List soft deleted items (Admin only)
-inspectionReportRoutes.get('/trash', requirePermission('local_charges:delete'), async (c) => {
+inspectionReportRoutes.get('/trash', requirePermission('inspection_reports:delete'), async (c) => {
   const page = Number(c.req.query('page')) || 1;
   const limit = Number(c.req.query('limit')) || 20;
   const skip = (page - 1) * limit;
@@ -137,7 +137,7 @@ inspectionReportRoutes.get('/trash', requirePermission('local_charges:delete'), 
 });
 
 // GET detail
-inspectionReportRoutes.get('/:id', async (c) => {
+inspectionReportRoutes.get('/:id', requirePermission('inspection_reports:read'), async (c) => {
   const id = Number(c.req.param('id'));
   if (isNaN(id)) {
     return c.json({ message: 'Invalid ID' }, 400);
@@ -169,7 +169,7 @@ inspectionReportRoutes.get('/:id', async (c) => {
 });
 
 // POST create
-inspectionReportRoutes.post('/', requirePermission('local_charges:create'), zValidator('json', createInspectionReportSchema), async (c) => {
+inspectionReportRoutes.post('/', requirePermission('inspection_reports:create'), zValidator('json', createInspectionReportSchema), async (c) => {
   const body = c.req.valid('json');
   const jwtPayload = c.get('jwtPayload') as any;
 
@@ -198,7 +198,7 @@ inspectionReportRoutes.post('/', requirePermission('local_charges:create'), zVal
 });
 
 // PUT update
-inspectionReportRoutes.put('/:id', requirePermission('local_charges:edit'), zValidator('json', createInspectionReportSchema), async (c) => {
+inspectionReportRoutes.put('/:id', requirePermission('inspection_reports:edit'), zValidator('json', createInspectionReportSchema), async (c) => {
   const id = Number(c.req.param('id'));
   const body = c.req.valid('json');
 
@@ -225,7 +225,7 @@ inspectionReportRoutes.put('/:id', requirePermission('local_charges:edit'), zVal
 });
 
 // DELETE (Soft delete)
-inspectionReportRoutes.delete('/:id', requirePermission('local_charges:delete'), async (c) => {
+inspectionReportRoutes.delete('/:id', requirePermission('inspection_reports:delete'), async (c) => {
   const id = Number(c.req.param('id'));
 
   try {
@@ -243,7 +243,7 @@ inspectionReportRoutes.delete('/:id', requirePermission('local_charges:delete'),
 
 
 // PATCH /:id/restore - Restore soft deleted item (Admin only)
-inspectionReportRoutes.patch('/:id/restore', requirePermission('local_charges:delete'), async (c) => {
+inspectionReportRoutes.patch('/:id/restore', requirePermission('inspection_reports:delete'), async (c) => {
   const id = Number(c.req.param('id'));
 
   try {
@@ -259,7 +259,7 @@ inspectionReportRoutes.patch('/:id/restore', requirePermission('local_charges:de
 });
 
 // DELETE /:id/permanent - Hard delete (Admin only)
-inspectionReportRoutes.delete('/:id/permanent', requirePermission('local_charges:delete'), async (c) => {
+inspectionReportRoutes.delete('/:id/permanent', requirePermission('inspection_reports:delete'), async (c) => {
   const id = Number(c.req.param('id'));
 
   try {

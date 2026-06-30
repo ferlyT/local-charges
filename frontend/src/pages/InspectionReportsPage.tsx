@@ -51,7 +51,7 @@ export default function InspectionReportsPage() {
             Manage, filter, and track inspection reports and details.
           </p>
         </div>
-        {hasPermission(currentUser, 'local_charges:create') && (
+        {hasPermission(currentUser, 'inspection_reports:create') && (
           <Link
             to="/inspection-reports/new"
             className="btn-primary inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99]"
