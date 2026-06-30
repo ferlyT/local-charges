@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import api from '../../lib/api';
 import { UploadCloud } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -40,6 +40,25 @@ export default function InspectionLampiranUploader({ reportId, onUploadSuccess }
       e.target.value = '';
     }
   };
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (isUploading) return;
+      
+      // Ignore paste if user is typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      if (e.clipboardData && e.clipboardData.files.length > 0) {
+        e.preventDefault();
+        handleMultipleFiles(e.clipboardData.files);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }); // Re-bind on render to keep handleMultipleFiles closure fresh
 
   const handleMultipleFiles = async (files: FileList | File[]) => {
     if (isUploading) return;
@@ -118,7 +137,7 @@ export default function InspectionLampiranUploader({ reportId, onUploadSuccess }
           <div className="flex flex-col items-center justify-center">
             <UploadCloud className="w-10 h-10 text-secondary/70 mb-2" />
             <p className="text-[0.95rem] font-medium text-primary">
-              Drag & drop some files here, or click to select files
+              Drag & drop, click, or <strong className="text-tertiary font-bold">CTRL+V</strong> to paste files
             </p>
             <p className="text-[0.72rem] text-secondary mt-1">
               Supports images and PDFs up to 10MB.
