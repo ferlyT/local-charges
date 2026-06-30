@@ -4,6 +4,7 @@ import { Trash2, Save, ArrowLeft, Clock, User, Hash } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import { useTranslation } from '../hooks/useTranslation';
+import ConfirmModal from '../components/ConfirmModal';
 import MarkingCodeAutocomplete from '../components/MarkingCodeAutocomplete';
 import InspectionLampiranGrid from '../components/lampiran/InspectionLampiranGrid';
 import type { Lampiran } from '../components/lampiran/LampiranGrid';
@@ -33,6 +34,8 @@ export default function InspectionReportFormPage() {
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'items' | 'attachments'>('items');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [attToDelete, setAttToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (isEdit) {
@@ -111,20 +114,26 @@ export default function InspectionReportFormPage() {
     }
   };
 
-  const handleDeleteLampiran = async (lampiranId: number) => {
-    if (!confirm(t('ir_form_confirm_att_del'))) return;
+  const confirmDeleteLampiran = async () => {
+    if (!attToDelete) return;
     try {
-      await api.delete(`/lampiran/${lampiranId}`);
+      await api.delete(`/lampiran/${attToDelete}`);
       fetchLampiran();
       toast.success(t('ir_form_toast_att_del_ok'));
     } catch (error) {
       toast.error(t('ir_form_toast_att_del_err'));
+    } finally {
+      setAttToDelete(null);
     }
   };
 
-  const handleDeleteForm = async () => {
-    if (!confirm(t('ir_form_confirm_delete'))) return;
+  const handleDeleteLampiran = (lampiranId: number) => {
+    setAttToDelete(lampiranId);
+  };
+
+  const confirmDeleteForm = async () => {
     setIsSaving(true);
+    setIsDeleteModalOpen(false);
     try {
       await inspectionReportsApi.delete(id as string);
       toast.success(t('ir_form_toast_delete_ok'));
@@ -133,6 +142,10 @@ export default function InspectionReportFormPage() {
       toast.error(error.response?.data?.message || t('ir_form_toast_delete_err'));
       setIsSaving(false);
     }
+  };
+
+  const handleDeleteForm = () => {
+    setIsDeleteModalOpen(true);
   };
 
   const canSave = 
@@ -459,6 +472,30 @@ export default function InspectionReportFormPage() {
           </div>
         </div>
       </form>
+
+      {/* Custom Confirm Modals */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title={t('ir_form_btn_delete')}
+        message={t('ir_form_confirm_delete')}
+        confirmText={t('ir_form_btn_delete')}
+        cancelText={t('ir_form_btn_cancel')}
+        onConfirm={confirmDeleteForm}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isDestructive={true}
+      />
+
+      <ConfirmModal
+        isOpen={attToDelete !== null}
+        title={t('ir_form_btn_delete')}
+        message={t('ir_form_confirm_att_del')}
+        confirmText={t('ir_form_btn_delete')}
+        cancelText={t('ir_form_btn_cancel')}
+        onConfirm={confirmDeleteLampiran}
+        onCancel={() => setAttToDelete(null)}
+        isDestructive={true}
+      />
     </div>
   );
 }
+

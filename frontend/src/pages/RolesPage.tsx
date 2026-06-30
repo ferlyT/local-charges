@@ -7,6 +7,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Navigate } from 'react-router-dom';
 import { hasPermission } from '../lib/permissions';
 import { useTranslation } from '../hooks/useTranslation';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface RoleType {
   fdId: number;
@@ -51,6 +52,7 @@ export default function RolesPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<RoleType | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<RoleType | null>(null);
   
   const [formData, setFormData] = useState({
     fdNama: '',
@@ -105,6 +107,7 @@ export default function RolesPage() {
     onSuccess: () => {
       toast.success(t('roles_toast_del_success'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setRoleToDelete(null);
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || t('roles_toast_del_err'));
@@ -153,8 +156,12 @@ export default function RolesPage() {
   };
 
   const handleDelete = (role: RoleType) => {
-    if (window.confirm(t('roles_confirm_del', { name: role.fdNama }))) {
-      deleteRoleMutation.mutate(role.fdId);
+    setRoleToDelete(role);
+  };
+
+  const confirmDelete = () => {
+    if (roleToDelete) {
+      deleteRoleMutation.mutate(roleToDelete.fdId);
     }
   };
 
@@ -337,6 +344,19 @@ export default function RolesPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={roleToDelete !== null}
+        title={t('roles_btn_del')}
+        message={roleToDelete ? t('roles_confirm_del', { name: roleToDelete.fdNama }) : ''}
+        confirmText={t('roles_btn_del')}
+        cancelText={t('ir_form_btn_cancel') || 'Cancel'}
+        onConfirm={confirmDelete}
+        onCancel={() => setRoleToDelete(null)}
+        isDestructive={true}
+      />
     </div>
   );
 }
+

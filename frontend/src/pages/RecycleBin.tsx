@@ -4,6 +4,7 @@ import api from '../lib/api';
 import { Trash2, RefreshCw, FileX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from '../hooks/useTranslation';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface TrashItem {
   fdId: number;
@@ -25,6 +26,9 @@ export default function RecycleBin() {
 
   const [activeTab, setActiveTab] = useState<TabType>('local-charges');
   
+  const [restoreId, setRestoreId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['trash', activeTab, page, limit],
     queryFn: async () => {
@@ -67,14 +71,24 @@ export default function RecycleBin() {
   });
 
   const handleRestore = (id: number) => {
-    if (confirm(t('rb_confirm_restore'))) {
-      restoreMutation.mutate(id);
+    setRestoreId(id);
+  };
+
+  const confirmRestore = () => {
+    if (restoreId) {
+      restoreMutation.mutate(restoreId);
+      setRestoreId(null);
     }
   };
 
   const handlePermanentDelete = (id: number) => {
-    if (confirm(t('rb_confirm_del'))) {
-      permanentDeleteMutation.mutate(id);
+    setDeleteId(id);
+  };
+
+  const confirmPermanentDelete = () => {
+    if (deleteId) {
+      permanentDeleteMutation.mutate(deleteId);
+      setDeleteId(null);
     }
   };
 

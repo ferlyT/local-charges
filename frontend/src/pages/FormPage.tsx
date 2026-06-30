@@ -8,6 +8,7 @@ import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import InputanAutocomplete from '../components/InputanAutocomplete';
 import LampiranGrid, { type Lampiran } from '../components/lampiran/LampiranGrid';
 import { hasPermission } from '../lib/permissions';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface Detail {
   fdNamaCustomer: string;
@@ -40,6 +41,8 @@ export default function FormPage() {
   const [isLoading, setIsLoading] = useState(isEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'items' | 'attachments'>('items');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [attToDelete, setAttToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (isEdit) {
@@ -145,20 +148,26 @@ export default function FormPage() {
     }
   };
 
-  const handleDeleteLampiran = async (lampiranId: number) => {
-    if (!confirm('Are you sure you want to delete this attachment?')) return;
+  const confirmDeleteLampiran = async () => {
+    if (!attToDelete) return;
     try {
-      await api.delete(`/lampiran/${lampiranId}`);
+      await api.delete(`/lampiran/${attToDelete}`);
       fetchLampiran();
       toast.success('Lampiran berhasil dihapus');
     } catch (error) {
       toast.error('Gagal menghapus lampiran');
+    } finally {
+      setAttToDelete(null);
     }
   };
 
-  const handleDeleteForm = async () => {
-    if (!confirm('Hapus form ini? Form akan masuk Recycle Bin dan bisa di-restore oleh admin.')) return;
+  const handleDeleteLampiran = (lampiranId: number) => {
+    setAttToDelete(lampiranId);
+  };
+
+  const confirmDeleteForm = async () => {
     setIsSaving(true);
+    setIsDeleteModalOpen(false);
     try {
       await api.delete(`/local-charges/${id}`);
       toast.success('Form berhasil dihapus');
@@ -167,6 +176,10 @@ export default function FormPage() {
       toast.error(error.response?.data?.message || 'Gagal menghapus form');
       setIsSaving(false);
     }
+  };
+
+  const handleDeleteForm = () => {
+    setIsDeleteModalOpen(true);
   };
 
 
@@ -467,7 +480,30 @@ export default function FormPage() {
           </div>
         </div>
       </form>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Hapus Form Biaya Lokal"
+        message="Hapus form ini? Form akan masuk Recycle Bin dan bisa di-restore oleh admin."
+        confirmText="Hapus"
+        cancelText="Batal"
+        onConfirm={confirmDeleteForm}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isDestructive={true}
+      />
+
+      <ConfirmModal
+        isOpen={attToDelete !== null}
+        title="Hapus Lampiran"
+        message="Anda yakin ingin menghapus lampiran ini?"
+        confirmText="Hapus"
+        cancelText="Batal"
+        onConfirm={confirmDeleteLampiran}
+        onCancel={() => setAttToDelete(null)}
+        isDestructive={true}
+      />
     </div>
   );
 }
+
 
