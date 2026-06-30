@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { inspectionReportsApi, InspectionReport } from '../lib/inspectionReports';
+import { inspectionReportsApi, type InspectionReport } from '../lib/inspectionReports';
 
 interface InspectionReportsResponse {
   data: InspectionReport[];

@@ -5,9 +5,9 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
 import MarkingCodeAutocomplete from '../components/MarkingCodeAutocomplete';
 import InspectionLampiranGrid from '../components/lampiran/InspectionLampiranGrid';
-import { Lampiran } from '../components/lampiran/LampiranGrid';
+import type { Lampiran } from '../components/lampiran/LampiranGrid';
 import { hasPermission } from '../lib/permissions';
-import { inspectionReportsApi, InspectionReport } from '../lib/inspectionReports';
+import { inspectionReportsApi, type InspectionReport } from '../lib/inspectionReports';
 import api from '../lib/api';
 
 export default function InspectionReportFormPage() {

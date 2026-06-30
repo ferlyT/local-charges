@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import InspectionLampiranUploader from './InspectionLampiranUploader';
 import LampiranItem from './LampiranItem';
 import LampiranLightbox from './LampiranLightbox';
-import { Lampiran } from './LampiranGrid';
+import type { Lampiran } from './LampiranGrid';
 
 interface LampiranGridProps {
   reportId: number;
