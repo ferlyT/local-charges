@@ -152,24 +152,26 @@ export default function Layout() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-secondary/20 flex justify-around items-center py-2 px-2 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex flex-col items-center gap-0.5 py-1 px-4 rounded-md transition-all ${
-                isActive
-                  ? 'text-tertiary font-semibold'
-                  : 'text-secondary hover:text-primary'
-              }`}
-            >
-              <item.icon size={20} className={isActive ? 'text-tertiary' : 'text-secondary'} />
-              <span className="text-[0.7rem]">{item.name}</span>
-            </Link>
-          );
-        })}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-secondary/20 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] overflow-x-auto no-scrollbar">
+        <div className="flex items-center min-w-max px-2 py-2 gap-1 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex flex-col items-center justify-center min-w-[72px] max-w-[84px] gap-1 py-1.5 px-1 rounded-lg transition-all flex-shrink-0 ${
+                  isActive
+                    ? 'text-tertiary bg-tertiary/10 font-semibold'
+                    : 'text-secondary hover:text-primary hover:bg-neutral'
+                }`}
+              >
+                <item.icon size={20} className={isActive ? 'text-tertiary' : 'text-secondary'} />
+                <span className="text-[0.65rem] truncate w-full text-center tracking-tight leading-tight">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

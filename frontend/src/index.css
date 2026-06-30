@@ -98,10 +98,19 @@
 
   .skeleton {
     @apply animate-pulse rounded;
-    background-color: rgba(140, 135, 125, 0.15);
+    background-color: rgba(140, 135, 125, 0.1);
   }
   .dark .skeleton {
-    background-color: rgba(143, 165, 181, 0.15);
+    background-color: rgba(143, 165, 181, 0.1);
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 }
-
