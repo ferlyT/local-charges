@@ -17,11 +17,11 @@ inspectionReportRoutes.use('*', authMiddleware);
 // Validation Schemas
 const createInspectionReportSchema = z.object({
   fdReportDate: z.string().datetime(),
-  fdListCode: z.string().min(1),
-  fdMarkingCode: z.string().min(1),
-  fdMarkingNo: z.string().min(1),
-  fdNamaCustomer: z.string().min(1),
-  fdKeterangan: z.string().min(1),
+  fdListCode: z.string().optional().default(''),
+  fdMarkingCode: z.string().optional().default(''),
+  fdMarkingNo: z.string().optional().default(''),
+  fdNamaCustomer: z.string().min(1, 'Customer Name is required'),
+  fdKeterangan: z.string().optional().default(''),
   fdStatus: z.string().optional().default('1'),
 });
 
