@@ -189,7 +189,7 @@ export default function FormPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 md:p-8 max-w-[1400px] mx-auto space-y-8">
         <div className="flex items-center gap-4 animate-pulse">
           <div className="h-10 w-10 skeleton rounded-full" />
           <div className="h-10 w-72 skeleton" />
@@ -203,7 +203,7 @@ export default function FormPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[1400px] mx-auto space-y-8">
       {/* Page Title with Navigation */}
       <div className="flex items-center gap-4 pb-2 border-b border-secondary/10">
         <button 

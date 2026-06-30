@@ -45,7 +45,7 @@ export default function LocalChargesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
       {/* Header section with modern flex spacing */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-secondary/10">
         <div>

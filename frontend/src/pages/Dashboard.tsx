@@ -31,7 +31,7 @@ export default function Dashboard() {
   const { data: recentIR, isLoading: recentIRLoading } = useInspectionReports(1, 5, '', 'fdCreatedAt', 'desc');
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
       {/* Welcome Banner */}
       <div className="relative overflow-hidden rounded-2xl p-8 text-white shadow-lg banner-gradient transition-all duration-500">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">

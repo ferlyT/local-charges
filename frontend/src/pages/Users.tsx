@@ -98,7 +98,7 @@ export default function Users() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-8 animate-pulse">
+      <div className="p-4 sm:p-6 md:p-8 max-w-[1400px] mx-auto space-y-8 animate-pulse">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 skeleton rounded-xl" />
           <div className="space-y-2">
@@ -119,7 +119,7 @@ export default function Users() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 max-w-[1400px] mx-auto space-y-8">
       {/* Header section with theme tokens */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-4 border-b border-secondary/10">
         <div className="flex items-center gap-4">
