@@ -156,6 +156,20 @@ export default function FormPage() {
     }
   };
 
+  const handleDeleteForm = async () => {
+    if (!confirm('Hapus form ini? Form akan masuk Recycle Bin dan bisa di-restore oleh admin.')) return;
+    setIsSaving(true);
+    try {
+      await api.delete(`/local-charges/${id}`);
+      toast.success('Form berhasil dihapus');
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal menghapus form');
+      setIsSaving(false);
+    }
+  };
+
+
   const canSave = 
     (isEdit && hasPermission(currentUser, 'local_charges:edit')) || 
     (!isEdit && hasPermission(currentUser, 'local_charges:create'));
@@ -418,15 +432,29 @@ export default function FormPage() {
       </div>
 
         {/* Action Buttons Sticky-ish row */}
-        <div className="flex justify-end gap-3.5">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="btn-secondary"
-          >
-            {canSave ? 'Cancel' : 'Back'}
-          </button>
-          {canSave && (
+        <div className="flex justify-between items-center">
+          <div>
+            {isEdit && hasPermission(currentUser, 'local_charges:delete') && (
+              <button
+                type="button"
+                onClick={handleDeleteForm}
+                disabled={isSaving}
+                className="btn border border-rose-500/30 text-rose-500 hover:bg-rose-500 hover:text-white px-4 py-2 flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                <span className="hidden sm:inline">Delete</span>
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3.5">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="btn-secondary"
+            >
+              {canSave ? 'Cancel' : 'Back'}
+            </button>
+            {canSave && (
             <button
               type="submit"
               disabled={isSaving}
@@ -436,6 +464,7 @@ export default function FormPage() {
               {isSaving ? 'Saving...' : (isEdit ? 'Update Form' : 'Save & Continue')}
             </button>
           )}
+          </div>
         </div>
       </form>
     </div>

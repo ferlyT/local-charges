@@ -4,11 +4,12 @@ import { useAuthStore } from '../stores/authStore';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import Spinner from '../components/ui/Spinner';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -23,7 +24,9 @@ export default function Login() {
       const response = await api.post('/auth/login', { username, password });
       const { user, token } = response.data;
       setAuth(user, token);
-      navigate('/');
+      // Use replace:true so the login page is removed from history,
+      // and window.location ensures the base path is respected in production.
+      navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -50,7 +53,7 @@ export default function Login() {
             Internal Platform
           </span>
           <h1 className="text-[3rem] font-display text-primary tracking-[-0.02em] leading-none mt-6">
-            Local Charges
+            WorkHub
           </h1>
           <p className="text-secondary text-[1.05rem] max-w-sm mt-4 leading-relaxed">
             Manage, verify, and track domestic operational fees and attachments with speed and clarity.
@@ -65,7 +68,7 @@ export default function Login() {
             </span>
           </div>
           <span className="block text-[0.72rem] text-secondary/60 mt-2 font-mono">
-            © {new Date().getFullYear()} Local Charges. All rights reserved.
+            © {new Date().getFullYear()} WorkHub. All rights reserved.
           </span>
         </div>
       </div>
@@ -75,7 +78,7 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8">
           <div className="text-left">
             <span className="lg:hidden font-mono text-[0.72rem] tracking-[0.2em] text-tertiary uppercase font-bold">
-              Local Charges
+              WorkHub
             </span>
             <h2 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-tight mt-2 lg:mt-0">
               Sign In
@@ -123,13 +126,21 @@ export default function Login() {
                 </div>
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="form-input pl-10"
+                  className="form-input pl-10 pr-10"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary transition-colors focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 

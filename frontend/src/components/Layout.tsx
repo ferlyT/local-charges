@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { LogOut, LayoutDashboard, FileText, ChevronLeft, ChevronRight, Users, UserCircle, Shield } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, ChevronLeft, ChevronRight, Users, UserCircle, Shield, Trash2, ClipboardList } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { hasPermission } from '../lib/permissions';
+import { resolveAvatarUrl } from '../lib/constants';
 
 export default function Layout() {
   const user = useAuthStore((state) => state.user);
@@ -19,7 +20,13 @@ export default function Layout() {
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'New Form', path: '/new', icon: FileText },
+    ...((hasPermission(user, 'local_charges:create')) ? [
+      { name: 'New Form', path: '/new', icon: FileText },
+      { name: 'Inspection Reports', path: '/inspection-reports', icon: ClipboardList },
+    ] : []),
+    ...((hasPermission(user, 'local_charges:delete')) ? [
+      { name: 'Recycle Bin', path: '/recycle-bin', icon: Trash2 },
+    ] : []),
     { name: 'My Profile', path: '/profile', icon: UserCircle },
     ...((hasPermission(user, 'users:manage')) ? [
       { name: 'Manage Users', path: '/users', icon: Users }
@@ -34,7 +41,7 @@ export default function Layout() {
       {/* Mobile Top Header */}
       <div className="md:hidden flex items-center justify-between px-5 py-3 bg-surface border-b border-secondary/20 w-full z-20 shadow-sm">
         <h1 className="font-display text-primary tracking-[-0.015em] text-[1.8rem]">
-          Local Charges
+          WorkHub
         </h1>
         <div className="flex items-center gap-4">
           <ThemeToggle />
@@ -63,7 +70,7 @@ export default function Layout() {
 
         <div className={`p-6 border-b border-secondary/20 flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}>
           <h1 className={`font-display text-primary tracking-[-0.015em] transition-all duration-300 ${isSidebarOpen ? 'text-[2.2rem]' : 'text-[1.5rem]'}`}>
-            {isSidebarOpen ? 'Local Charges' : 'LC'}
+            {isSidebarOpen ? 'WorkHub' : 'WH'}
           </h1>
         </div>
         
@@ -101,7 +108,7 @@ export default function Layout() {
             {isSidebarOpen && (
               <div className="flex items-center gap-3 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/profile')}>
                 {user?.avatar ? (
-                  <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner flex-shrink-0" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'U') + '&background=random' }} />
+                  <img src={resolveAvatarUrl(user.avatar) ?? user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner flex-shrink-0" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'U') + '&background=random' }} />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-tertiary/10 text-tertiary flex items-center justify-center font-bold flex-shrink-0 shadow-inner" title={user?.name}>
                     {user?.name?.charAt(0).toUpperCase()}
@@ -117,7 +124,7 @@ export default function Layout() {
             {!isSidebarOpen && (
               <div className="mb-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/profile')} title={user?.name}>
                 {user?.avatar ? (
-                  <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner flex-shrink-0" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'U') + '&background=random' }} />
+                  <img src={resolveAvatarUrl(user.avatar) ?? user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner flex-shrink-0" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'U') + '&background=random' }} />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-tertiary/10 text-tertiary flex items-center justify-center font-bold flex-shrink-0 shadow-inner">
                     {user?.name?.charAt(0).toUpperCase()}

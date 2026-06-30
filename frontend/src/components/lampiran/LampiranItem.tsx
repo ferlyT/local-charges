@@ -102,6 +102,7 @@ export default function LampiranItem({ item, onDelete, onClick }: LampiranItemPr
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button 
+            type="button"
             className="p-1.5 bg-surface text-primary rounded-full hover:bg-neutral transition"
             title="View"
             onClick={(e) => { e.stopPropagation(); onClick(); }}
@@ -109,6 +110,7 @@ export default function LampiranItem({ item, onDelete, onClick }: LampiranItemPr
             <Eye size={16} />
           </button>
           <button 
+            type="button"
             className="p-1.5 bg-surface text-primary rounded-full hover:bg-neutral transition"
             title="Download"
             onClick={handleDownload}
@@ -117,6 +119,7 @@ export default function LampiranItem({ item, onDelete, onClick }: LampiranItemPr
           </button>
           {onDelete && (
             <button 
+              type="button"
               className="p-1.5 bg-surface text-tertiary rounded-full hover:bg-neutral transition"
               title="Delete"
               onClick={(e) => {

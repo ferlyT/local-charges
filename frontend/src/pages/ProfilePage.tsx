@@ -3,10 +3,12 @@ import { useAuthStore } from '../stores/authStore';
 import { User as UserIcon, Lock, Save, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import { resolveAvatarUrl } from '../lib/constants';
 
 export default function ProfilePage() {
   const { user, setAuth, token } = useAuthStore();
   const [nama, setNama] = useState(user?.name || '');
+  // Store only the relative path internally; resolve to full URL only when rendering
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -67,12 +69,9 @@ export default function ProfilePage() {
     const loadingToast = toast.loading('Uploading avatar...');
     try {
       const res = await api.post('/lampiran/avatar', formData);
-      
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
-      const baseUrl = apiUrl.replace('/api/v1', '');
-      const newAvatarUrl = baseUrl + res.data.url;
-      
-      setAvatar(newAvatarUrl);
+      // Save only the relative path (e.g. "/api/v1/lampiran/download/avatars/xxx.jpg")
+      // resolveAvatarUrl will convert it to the correct full URL at render time
+      setAvatar(res.data.url);
       toast.success('Avatar uploaded! Click Save to apply.', { id: loadingToast });
     } catch (err: any) {
       console.error(err);
@@ -114,7 +113,7 @@ export default function ProfilePage() {
               >
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-neutral/50 border-4 border-surface shadow-sm group-hover:border-tertiary/30 transition-colors">
                   {avatar ? (
-                     <img src={avatar} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nama || 'User') + '&background=random' }} />
+                     <img src={resolveAvatarUrl(avatar) ?? avatar} alt="Avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nama || 'User') + '&background=random' }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-secondary uppercase bg-tertiary/10">
                       {(nama || 'U')[0]}
@@ -154,16 +153,23 @@ export default function ProfilePage() {
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-semibold text-secondary mb-1.5">Avatar URL (Optional)</label>
-              <input
-                type="url"
-                value={avatar}
-                onChange={(e) => setAvatar(e.target.value)}
-                placeholder="https://example.com/avatar.jpg"
-                className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-lg px-4 py-2.5 text-[0.95rem] text-primary outline-none transition-all"
-              />
-            </div>
+            {avatar && (
+              <div className="flex items-center justify-between gap-3 bg-secondary/5 border border-secondary/15 rounded-lg px-4 py-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Camera size={15} className="text-tertiary flex-shrink-0" />
+                  <span className="text-[0.82rem] text-secondary truncate font-mono">
+                    {avatar.startsWith('/api/') ? 'Uploaded photo' : avatar}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAvatar('')}
+                  className="text-rose-500 hover:text-rose-600 text-[0.78rem] font-semibold flex-shrink-0 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
 
             <button
               type="submit"

@@ -1,3 +1,4 @@
+import './loadEnv';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -10,6 +11,7 @@ import inputanRoutes from './routes/inputan';
 import usersRoutes from './routes/users';
 import rolesRoutes from './routes/roles';
 import logsRoutes from './routes/logs';
+import inspectionReportRoutes from './routes/inspectionReport';
 import { logger as winstonLogger } from './lib/logger';
 
 const app = new Hono();
@@ -37,7 +39,7 @@ app.use('/api/v1/*', cors({
 }));
 
 app.get('/', (c) => {
-  return c.text('Local Charges API is running!');
+  return c.text('WorkHub API is running!');
 });
 
 app.route('/api/v1/auth', authRoutes);
@@ -48,6 +50,7 @@ app.route('/api/v1/inputan', inputanRoutes);
 app.route('/api/v1/users', usersRoutes);
 app.route('/api/v1/roles', rolesRoutes);
 app.route('/api/v1/logs', logsRoutes);
+app.route('/api/v1/inspection-reports', inspectionReportRoutes);
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 

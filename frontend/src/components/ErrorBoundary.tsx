@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { getApiUrl } from '../lib/constants';
 
 interface Props {
   children: ReactNode;
@@ -26,7 +27,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     
     // Send to backend
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+      const apiUrl = getApiUrl();
       fetch(`${apiUrl}/logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

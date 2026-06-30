@@ -21,6 +21,8 @@ model tbUsers {
 
   localCharges         tbLocalCharges[]
   localChargesLampiran tbLocalChargesLampiran[]
+  inspectionReports    tbInspectionReport[]
+  inspectionReportLampiran tbInspectionReportLampiran[]
 }
 
 model tbRoles {
@@ -102,4 +104,59 @@ model tbLocalChargesLampiran {
   
   fdUploadedAt     DateTime       @default(now())
   fdKeterangan     String?        @db.VarChar(255)
+}
+
+model VwtbEntryListCustomer {
+  fdListCode    String               @id @db.Char(7)
+  fdMarkingCode String               @db.Char(30)
+  fdMarkingNo   String               @db.Char(50)
+  fdCustName    String?              @db.VarChar(150)
+  reports       tbInspectionReport[]
+
+  @@map("vwtbEntryListCustomer")
+}
+
+model tbInspectionReport {
+  fdId             Int                          @id @default(autoincrement())
+  fdReportNumber   String                       @unique @db.VarChar(30)
+  fdReportDate     DateTime
+  fdListCode       String                       @db.Char(7)
+  fdMarkingCode    String                       @db.Char(30)
+  fdMarkingNo      String                       @db.Char(50)
+  fdNamaCustomer   String                       @db.VarChar(150)
+  fdKeterangan     String                       @db.VarChar(Max)
+  fdStatus         String                       @default("1") @db.VarChar(1)
+  
+  fdCreatedBy      Int
+  user             tbUsers                      @relation(fields: [fdCreatedBy], references: [fdId], onUpdate: NoAction)
+  
+  fdCreatedAt      DateTime                     @default(now())
+  fdUpdatedAt      DateTime                     @default(now()) @updatedAt
+  fdDeletedAt      DateTime?
+
+  entryList        VwtbEntryListCustomer        @relation(fields: [fdListCode], references: [fdListCode])
+  lampiran         tbInspectionReportLampiran[]
+
+  @@map("tbInspectionReport")
+}
+
+model tbInspectionReportLampiran {
+  fdId                 Int                @id @default(autoincrement())
+  
+  fdInspectionReportId Int
+  report               tbInspectionReport @relation(fields: [fdInspectionReportId], references: [fdId], onDelete: Cascade)
+  
+  fdNamaFile           String             @db.VarChar(255)
+  fdNamaFileSimpan     String             @db.VarChar(255)
+  fdMimeType           String             @db.VarChar(100)
+  fdUkuranBytes        BigInt
+  fdPath               String             @db.VarChar(500)
+  
+  fdUploadedBy         Int
+  user                 tbUsers            @relation(fields: [fdUploadedBy], references: [fdId], onUpdate: NoAction)
+  
+  fdUploadedAt         DateTime           @default(now())
+  fdKeterangan         String?            @db.VarChar(255)
+
+  @@map("tbInspectionReportLampiran")
 }

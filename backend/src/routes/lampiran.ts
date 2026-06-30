@@ -14,14 +14,23 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 lampiranRoutes.get('/download/:filename', authMiddleware, async (c) => {
   const filename = c.req.param('filename');
   
-  // Find record in DB
-  const lampiran = await prisma.tbLocalChargesLampiran.findFirst({
+  let lampiran: any = await prisma.tbLocalChargesLampiran.findFirst({
     where: {
       fdPath: {
         endsWith: filename,
       },
     },
   });
+
+  if (!lampiran) {
+    lampiran = await prisma.tbInspectionReportLampiran.findFirst({
+      where: {
+        fdPath: {
+          endsWith: filename,
+        },
+      },
+    });
+  }
 
   if (!lampiran) {
     return c.json({ message: 'File not found in database' }, 404);
@@ -49,9 +58,18 @@ lampiranRoutes.get('/download/:filename', authMiddleware, async (c) => {
 lampiranRoutes.delete('/:id', authMiddleware, async (c) => {
   const id = Number(c.req.param('id'));
 
-  const lampiran = await prisma.tbLocalChargesLampiran.findUnique({
+  let lampiran: any = await prisma.tbLocalChargesLampiran.findUnique({
     where: { fdId: id },
   });
+
+  let isInspectionReport = false;
+
+  if (!lampiran) {
+    lampiran = await prisma.tbInspectionReportLampiran.findUnique({
+      where: { fdId: id },
+    });
+    isInspectionReport = !!lampiran;
+  }
 
   if (!lampiran) {
     return c.json({ message: 'Attachment not found' }, 404);
@@ -60,9 +78,11 @@ lampiranRoutes.delete('/:id', authMiddleware, async (c) => {
   try {
     await prisma.$transaction(async (tx) => {
       // 1. Delete DB record
-      await tx.tbLocalChargesLampiran.delete({
-        where: { fdId: id },
-      });
+      if (isInspectionReport) {
+        await tx.tbInspectionReportLampiran.delete({ where: { fdId: id } });
+      } else {
+        await tx.tbLocalChargesLampiran.delete({ where: { fdId: id } });
+      }
       // 2. Delete Physical File
       deleteFile(lampiran.fdPath);
     });
@@ -110,6 +130,53 @@ lampiranRoutes.post('/local-charges/:id', authMiddleware, async (c) => {
     });
 
     // Map output to what frontend expects
+    return c.json({
+      fdId: newLampiran.fdId,
+      fdFileName: newLampiran.fdNamaFile,
+      fdFilePath: newLampiran.fdPath,
+      fdMimeType: newLampiran.fdMimeType,
+      fdFileSize: Number(newLampiran.fdUkuranBytes)
+    }, 201);
+  } catch (error: any) {
+    logger.error('Error uploading file:', error);
+    return c.json({ message: error.message || 'Failed to upload file' }, 400);
+  }
+});
+
+// Upload file to inspection report
+lampiranRoutes.post('/inspection-reports/:id', authMiddleware, async (c) => {
+  const reportId = Number(c.req.param('id'));
+  const body = await c.req.parseBody();
+  const file = body['file'] as File;
+
+  if (!file) {
+    return c.json({ message: 'No file uploaded' }, 400);
+  }
+
+  const report = await prisma.tbInspectionReport.findUnique({
+    where: { fdId: reportId },
+  });
+
+  if (!report) {
+    return c.json({ message: 'Inspection Report not found' }, 404);
+  }
+
+  try {
+    const jwtPayload = c.get('jwtPayload');
+    const savedFileInfo = await saveFile(file, reportId);
+
+    const newLampiran = await prisma.tbInspectionReportLampiran.create({
+      data: {
+        fdInspectionReportId: reportId,
+        fdNamaFile: savedFileInfo.name,
+        fdNamaFileSimpan: savedFileInfo.savedName,
+        fdPath: savedFileInfo.path,
+        fdMimeType: savedFileInfo.type,
+        fdUkuranBytes: savedFileInfo.size,
+        fdUploadedBy: parseInt(jwtPayload.sub),
+      },
+    });
+
     return c.json({
       fdId: newLampiran.fdId,
       fdFileName: newLampiran.fdNamaFile,

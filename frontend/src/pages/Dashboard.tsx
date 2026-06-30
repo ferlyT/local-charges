@@ -386,12 +386,12 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
+                      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-start">
+                        <div className="flex-1 min-w-0">
                           <div className="text-[0.7rem] uppercase tracking-wider text-secondary/70 font-semibold mb-0.5">Inputan</div>
-                          <div className="text-sm font-mono text-secondary">{charge.details?.[0]?.fdNoInputan || '-'}</div>
+                          <div className="text-sm font-mono text-secondary truncate">{charge.details?.[0]?.fdNoInputan || '-'}</div>
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <div className="text-[0.7rem] uppercase tracking-wider text-secondary/70 font-semibold mb-0.5">References</div>
                           <div className="flex flex-col gap-0.5 font-mono text-[0.75rem] text-secondary">
                             {charge.details?.[0]?.fdMarking && <span><span className="text-secondary/50">MKR:</span> <span className="font-semibold text-primary">{charge.details[0].fdMarking}</span></span>}
@@ -404,13 +404,13 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mt-auto pt-4 border-t border-secondary/10">
-                      <div className="flex justify-between items-center mb-4 px-1 text-[0.7rem] font-medium text-secondary/80">
-                        <div className="flex items-center gap-1.5" title="Author">
-                          <User size={12} />
-                          <span className="truncate max-w-[100px]">{charge.user?.fdNama || 'Unknown'}</span>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 px-1 text-[0.7rem] font-medium text-secondary/80">
+                        <div className="flex items-center gap-1.5 min-w-0" title="Author">
+                          <User size={12} className="shrink-0" />
+                          <span className="truncate">{charge.user?.fdNama || 'Unknown'}</span>
                         </div>
-                        <div className="flex items-center gap-1.5" title="Date Created">
-                          <Clock size={12} />
+                        <div className="flex items-center gap-1.5 shrink-0" title="Date Created">
+                          <Clock size={12} className="shrink-0" />
                           <span>{new Date(charge.fdCreatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         </div>
                       </div>

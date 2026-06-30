@@ -7,6 +7,7 @@ import { generateFormNumber } from '../services/formNumberService';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { logger } from '../lib/logger';
 import { requirePermission } from '../middleware/permissionMiddleware';
+import { deleteFile } from '../services/fileService';
 
 const localChargesRoutes = new Hono();
 
@@ -226,6 +227,43 @@ localChargesRoutes.get('/stats', async (c) => {
   }
 });
 
+// GET /trash - List soft deleted items (Admin only)
+localChargesRoutes.get('/trash', requirePermission('local_charges:delete'), async (c) => {
+  const page = Number(c.req.query('page')) || 1;
+  const limit = Number(c.req.query('limit')) || 20;
+  const skip = (page - 1) * limit;
+
+  try {
+    const total = await prisma.tbLocalCharges.count({
+      where: { fdDeletedAt: { not: null } }
+    });
+
+    const data = await prisma.tbLocalCharges.findMany({
+      where: { fdDeletedAt: { not: null } },
+      include: {
+        user: { select: { fdNama: true } },
+        details: { select: { fdNamaCustomer: true, fdNoInputan: true }, take: 1 },
+      },
+      orderBy: { fdDeletedAt: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    return c.json({
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching trash:', error);
+    return c.json({ message: 'Failed to fetch trash data' }, 500);
+  }
+});
+
 // GET detail
 localChargesRoutes.get('/:id', async (c) => {
   const id = Number(c.req.param('id'));
@@ -344,6 +382,63 @@ localChargesRoutes.delete('/:id', requirePermission('local_charges:delete'), asy
   });
 
   return c.json({ message: 'Deleted successfully' });
+});
+
+
+// PATCH /:id/restore - Restore soft deleted item (Admin only)
+localChargesRoutes.patch('/:id/restore', requirePermission('local_charges:delete'), async (c) => {
+  const id = Number(c.req.param('id'));
+
+  try {
+    const updated = await prisma.tbLocalCharges.update({
+      where: { fdId: id },
+      data: { fdDeletedAt: null },
+    });
+    return c.json(updated);
+  } catch (error) {
+    logger.error('Error restoring form:', error);
+    return c.json({ message: 'Failed to restore form' }, 500);
+  }
+});
+
+// DELETE /:id/permanent - Hard delete (Admin only)
+localChargesRoutes.delete('/:id/permanent', requirePermission('local_charges:delete'), async (c) => {
+  const id = Number(c.req.param('id'));
+
+  try {
+    // Check if the record exists and is soft deleted
+    const record = await prisma.tbLocalCharges.findUnique({
+      where: { fdId: id },
+      include: { lampiran: true }
+    });
+
+    if (!record) {
+      return c.json({ message: 'Record not found' }, 404);
+    }
+
+    if (!record.fdDeletedAt) {
+      return c.json({ message: 'Record must be soft deleted first before permanent deletion' }, 400);
+    }
+
+    // Delete files physically
+    for (const l of record.lampiran) {
+      if (l.fdPath) {
+        deleteFile(l.fdPath);
+      }
+    }
+
+    // Use transaction to delete child records then parent
+    await prisma.$transaction([
+      prisma.tbLocalChargesLampiran.deleteMany({ where: { fdLocalChargesId: id } }),
+      prisma.tbLocalChargesDetail.deleteMany({ where: { fdLocalChargesId: id } }),
+      prisma.tbLocalCharges.delete({ where: { fdId: id } })
+    ]);
+
+    return c.json({ message: 'Permanently deleted' });
+  } catch (error) {
+    logger.error('Error permanently deleting form:', error);
+    return c.json({ message: 'Failed to permanently delete form' }, 500);
+  }
 });
 
 export default localChargesRoutes;

@@ -22,38 +22,43 @@ function StatCard({
   trend?: { value: number; label: string };
 }) {
   return (
-    <div className="card p-3 flex items-center justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${accent}`}>
-          <Icon size={18} />
-        </div>
-        <div>
-          <div className="text-[0.7rem] text-secondary font-medium uppercase tracking-wider">{label}</div>
-          <div className="text-[1.25rem] font-bold text-primary leading-none tracking-tight mt-0.5">
+    <div className="card p-3.5 flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 min-h-[110px]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1 min-w-0">
+          <div className="text-[0.7rem] text-secondary font-medium uppercase tracking-wider truncate" title={label}>{label}</div>
+          <div className="text-[1.4rem] font-bold text-primary leading-none tracking-tight">
             {value}
           </div>
-          {sub && <div className="text-[0.65rem] text-secondary/60 mt-0.5">{sub}</div>}
+        </div>
+        <div className={`p-2 rounded-lg ${accent} shrink-0`}>
+          <Icon size={18} />
         </div>
       </div>
-      {trend !== undefined && (
-        <div
-          className={`flex items-center gap-1 text-[0.65rem] font-semibold px-2 py-1 rounded-full shrink-0 ${
-            trend.value > 0
-              ? 'bg-emerald-500/10 text-emerald-500'
-              : trend.value < 0
-              ? 'bg-rose-500/10 text-rose-500'
-              : 'bg-secondary/10 text-secondary'
-          }`}
-        >
-          {trend.value > 0 ? (
-            <TrendingUp size={10} />
-          ) : trend.value < 0 ? (
-            <TrendingDown size={10} />
-          ) : (
-            <Minus size={10} />
+      
+      {(sub || trend !== undefined) && (
+        <div className="mt-3 pt-2 border-t border-secondary/10 flex items-center justify-between gap-2 flex-wrap">
+          {sub && <div className="text-[0.65rem] text-secondary/60 truncate" title={sub}>{sub}</div>}
+          {trend !== undefined && (
+            <div
+              className={`flex items-center gap-1 text-[0.65rem] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                trend.value > 0
+                  ? 'bg-emerald-500/10 text-emerald-500'
+                  : trend.value < 0
+                  ? 'bg-rose-500/10 text-rose-500'
+                  : 'bg-secondary/10 text-secondary'
+              }`}
+            >
+              {trend.value > 0 ? (
+                <TrendingUp size={10} />
+              ) : trend.value < 0 ? (
+                <TrendingDown size={10} />
+              ) : (
+                <Minus size={10} />
+              )}
+              {trend.value > 0 ? '+' : ''}
+              {trend.value}%
+            </div>
           )}
-          {trend.value > 0 ? '+' : ''}
-          {trend.value}%
         </div>
       )}
     </div>
@@ -187,7 +192,7 @@ export default function AnalyticsSection({ stats, isLoading }: {
   if (isLoading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card p-4 h-20 skeleton" />
           ))}
@@ -209,7 +214,7 @@ export default function AnalyticsSection({ stats, isLoading }: {
   return (
     <div className="space-y-4">
       {/* KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Form"
           value={stats.totalForms.toLocaleString()}

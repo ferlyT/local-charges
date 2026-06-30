@@ -6,6 +6,8 @@ import bcrypt from 'bcrypt';
 import { sign } from 'hono/jwt';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { serializeUser } from '../lib/userSerializer';
+import { logger } from '../lib/logger';
+import { loginRateLimiter } from '../middleware/loginRateLimiter';
 
 const authRoutes = new Hono();
 
@@ -25,24 +27,36 @@ const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-authRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
+authRoutes.post('/login', loginRateLimiter, zValidator('json', loginSchema), async (c) => {
   const { username, password } = c.req.valid('json');
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0].trim() || c.req.header('x-real-ip') || c.env?.incoming?.socket?.remoteAddress || 'unknown';
 
-  const user = await prisma.tbUsers.findUnique({
-    where: { fdUsername: username },
-    include: { role: { include: { permissions: true } } }
-  });
+  logger.info(`[AUTH] Login attempt  | username="${username}" | ip="${ip}"`);
+
+  let user;
+  try {
+    user = await prisma.tbUsers.findUnique({
+      where: { fdUsername: username },
+      include: { role: { include: { permissions: true } } }
+    });
+  } catch (dbErr: any) {
+    logger.error(`[AUTH] DB error during login for "${username}": ${dbErr?.message || dbErr}`);
+    return c.json({ message: 'Internal server error. Please try again later.' }, 500);
+  }
 
   if (!user) {
+    logger.warn(`[AUTH] Login failed   | username="${username}" | ip="${ip}" | reason="invalid credentials"`);
     return c.json({ message: 'Invalid credentials' }, 401);
   }
 
   if (!user.fdAktif) {
+    logger.warn(`[AUTH] Login failed   | username="${username}" | ip="${ip}" | reason="account inactive"`);
     return c.json({ message: 'Account is pending admin approval or inactive' }, 403);
   }
 
   const isValidPassword = await bcrypt.compare(password, user.fdPassword);
   if (!isValidPassword) {
+    logger.warn(`[AUTH] Login failed   | username="${username}" | ip="${ip}" | reason="wrong password"`);
     return c.json({ message: 'Invalid credentials' }, 401);
   }
 
@@ -58,6 +72,8 @@ authRoutes.post('/login', zValidator('json', loginSchema), async (c) => {
   };
 
   const token = await sign(payload, secret);
+
+  logger.info(`[AUTH] Login success  | username="${username}" | ip="${ip}" | role="${roleName}"`);
 
   return c.json({
     message: 'Login successful',
