@@ -20,6 +20,10 @@ const AVAILABLE_PERMISSIONS = [
   { id: 'local_charges:create', label: 'Create Local Charges' },
   { id: 'local_charges:edit', label: 'Edit Local Charges' },
   { id: 'local_charges:delete', label: 'Delete Local Charges' },
+  { id: 'inspection_reports:read', label: 'View Inspection Reports' },
+  { id: 'inspection_reports:create', label: 'Create Inspection Reports' },
+  { id: 'inspection_reports:edit', label: 'Edit Inspection Reports' },
+  { id: 'inspection_reports:delete', label: 'Delete Inspection Reports' },
   { id: 'users:manage', label: 'Manage Users' },
   { id: 'roles:manage', label: 'Manage Roles' },
 ];
