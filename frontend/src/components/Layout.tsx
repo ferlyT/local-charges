@@ -21,7 +21,7 @@ export default function Layout() {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     ...((hasPermission(user, 'local_charges:create')) ? [
-      { name: 'New Form', path: '/new', icon: FileText },
+      { name: 'Local Charge', path: '/new', icon: FileText },
       { name: 'Inspection Reports', path: '/inspection-reports', icon: ClipboardList },
     ] : []),
     ...((hasPermission(user, 'local_charges:delete')) ? [

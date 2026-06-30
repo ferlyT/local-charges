@@ -202,7 +202,7 @@ export default function FormPage() {
         </button>
         <div>
           <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-none mb-1">
-            {isEdit ? 'Edit Form' : 'New Form'}
+            {isEdit ? 'Edit Local Charge' : 'New Local Charge'}
           </h1>
           <p className="text-secondary text-sm">
             {isEdit ? 'Update details and view attachments for this local charge record.' : 'Create a new local charge entry.'}

@@ -37,7 +37,7 @@ inspectionReportRoutes.get('/lookup', async (c) => {
           { fdCustName: { contains: search } },
         ],
       } : undefined,
-      take: 20
+      take: 25
     });
     return c.json(results);
   } catch (error) {
@@ -53,10 +53,10 @@ inspectionReportRoutes.get('/', async (c) => {
   const search = c.req.query('search') || '';
   const sortBy = c.req.query('sortBy') || 'fdCreatedAt';
   const sortOrder = c.req.query('sortOrder') === 'asc' ? 'asc' : 'desc';
-  
+
   const allowedSortFields = ['fdReportNumber', 'fdReportDate', 'fdCreatedAt', 'fdNamaCustomer', 'fdMarkingCode', 'fdStatus'];
   const resolvedSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'fdCreatedAt';
-  
+
   const skip = (page - 1) * limit;
 
   try {
@@ -74,7 +74,7 @@ inspectionReportRoutes.get('/', async (c) => {
     }
 
     const total = await prisma.tbInspectionReport.count({ where: whereClause });
-    
+
     const data = await prisma.tbInspectionReport.findMany({
       where: whereClause,
       include: {
@@ -172,7 +172,7 @@ inspectionReportRoutes.get('/:id', async (c) => {
 inspectionReportRoutes.post('/', requirePermission('local_charges:create'), zValidator('json', createInspectionReportSchema), async (c) => {
   const body = c.req.valid('json');
   const jwtPayload = c.get('jwtPayload') as any;
-  
+
   const fdReportNumber = await generateInspectionReportNumber();
 
   try {

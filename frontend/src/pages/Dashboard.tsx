@@ -60,7 +60,7 @@ export default function Dashboard() {
             className="btn-primary inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99]"
           >
             <Plus size={18} />
-            New Form
+            New Local Charge
           </Link>
         )}
       </div>
@@ -237,11 +237,11 @@ export default function Dashboard() {
                         </div>
                         <h3 className="text-lg font-semibold text-primary mb-1">No forms found</h3>
                         <p className="text-secondary text-sm leading-relaxed mb-4">
-                          We couldn't find any local charges matching your search parameters. Try adjusting your query or create a new form.
+                          We couldn't find any local charges matching your search parameters. Try adjusting your query or create a new local charge.
                         </p>
                         {hasPermission(currentUser, 'local_charges:create') && (
                           <Link to="/new" className="btn-secondary py-2 px-4 text-sm flex items-center gap-1.5">
-                            <Plus size={16} /> Create Form
+                            <Plus size={16} /> Create Local Charge
                           </Link>
                         )}
                       </div>
@@ -354,11 +354,11 @@ export default function Dashboard() {
                   </div>
                   <h3 className="text-lg font-semibold text-primary mb-1">No forms found</h3>
                   <p className="text-secondary text-sm leading-relaxed mb-4">
-                    We couldn't find any local charges matching your search parameters. Try adjusting your query or create a new form.
+                    We couldn't find any local charges matching your search parameters. Try adjusting your query or create a new local charge.
                   </p>
                   {hasPermission(currentUser, 'local_charges:create') && (
                     <Link to="/new" className="btn-secondary py-2 px-4 text-sm flex items-center gap-1.5">
-                      <Plus size={16} /> Create Form
+                      <Plus size={16} /> Create Local Charge
                     </Link>
                   )}
                 </div>
