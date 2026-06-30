@@ -15,17 +15,32 @@ interface RoleType {
   userCount: number;
 }
 
-const AVAILABLE_PERMISSIONS = [
-  { id: 'local_charges:read', label: 'View Local Charges' },
-  { id: 'local_charges:create', label: 'Create Local Charges' },
-  { id: 'local_charges:edit', label: 'Edit Local Charges' },
-  { id: 'local_charges:delete', label: 'Delete Local Charges' },
-  { id: 'inspection_reports:read', label: 'View Inspection Reports' },
-  { id: 'inspection_reports:create', label: 'Create Inspection Reports' },
-  { id: 'inspection_reports:edit', label: 'Edit Inspection Reports' },
-  { id: 'inspection_reports:delete', label: 'Delete Inspection Reports' },
-  { id: 'users:manage', label: 'Manage Users' },
-  { id: 'roles:manage', label: 'Manage Roles' },
+const PERMISSION_GROUPS = [
+  {
+    group: 'Local Charges',
+    permissions: [
+      { id: 'local_charges:read', label: 'View Local Charges' },
+      { id: 'local_charges:create', label: 'Create Local Charges' },
+      { id: 'local_charges:edit', label: 'Edit Local Charges' },
+      { id: 'local_charges:delete', label: 'Delete Local Charges' },
+    ]
+  },
+  {
+    group: 'Inspection Reports',
+    permissions: [
+      { id: 'inspection_reports:read', label: 'View Inspection Reports' },
+      { id: 'inspection_reports:create', label: 'Create Inspection Reports' },
+      { id: 'inspection_reports:edit', label: 'Edit Inspection Reports' },
+      { id: 'inspection_reports:delete', label: 'Delete Inspection Reports' },
+    ]
+  },
+  {
+    group: 'System & Administration',
+    permissions: [
+      { id: 'users:manage', label: 'Manage Users' },
+      { id: 'roles:manage', label: 'Manage Roles' },
+    ]
+  }
 ];
 
 export default function RolesPage() {
@@ -228,7 +243,7 @@ export default function RolesPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-neutral/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-surface rounded-xl border border-secondary/20 shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-surface rounded-xl border border-secondary/20 shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-5 border-b border-secondary/10">
               <h2 className="text-xl font-bold text-primary flex items-center gap-2">
                 {editingRole ? 'Edit Role' : 'Create New Role'}
@@ -269,18 +284,27 @@ export default function RolesPage() {
                 
                 <div className="pt-3">
                   <label className="block text-sm font-semibold text-secondary mb-3">Permissions</label>
-                  <div className="space-y-3">
-                    {AVAILABLE_PERMISSIONS.map(perm => (
-                      <label key={perm.id} className="flex items-center gap-3.5 p-2.5 rounded-lg hover:bg-secondary/5 cursor-pointer transition-colors border border-secondary/5 hover:border-secondary/20 bg-surface">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(perm.id)}
-                          onChange={() => handlePermissionToggle(perm.id)}
-                          disabled={editingRole?.fdNama === 'admin'}
-                          className="w-4 h-4 text-tertiary rounded border-secondary/30 focus:ring-tertiary/30 cursor-pointer"
-                        />
-                        <span className="text-[0.95rem] text-primary font-medium">{perm.label}</span>
-                      </label>
+                  <div className="space-y-4">
+                    {PERMISSION_GROUPS.map((group, idx) => (
+                      <div key={idx} className="border border-secondary/20 rounded-lg overflow-hidden bg-surface">
+                        <div className="bg-neutral/50 px-4 py-2 border-b border-secondary/10">
+                          <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{group.group}</h4>
+                        </div>
+                        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {group.permissions.map(perm => (
+                            <label key={perm.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary/5 cursor-pointer transition-colors border border-transparent hover:border-secondary/20">
+                              <input
+                                type="checkbox"
+                                checked={formData.permissions.includes(perm.id)}
+                                onChange={() => handlePermissionToggle(perm.id)}
+                                disabled={editingRole?.fdNama === 'admin'}
+                                className="w-4 h-4 text-tertiary rounded border-secondary/30 focus:ring-tertiary/30 cursor-pointer"
+                              />
+                              <span className="text-sm text-primary font-medium">{perm.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                   {editingRole?.fdNama === 'admin' && (
