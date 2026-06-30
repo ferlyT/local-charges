@@ -25,12 +25,18 @@ const createInspectionReportSchema = z.object({
   fdStatus: z.string().optional().default('1'),
 });
 
-// GET /lookup/:markingCode - Lookup entry list data
-inspectionReportRoutes.get('/lookup/:markingCode', async (c) => {
-  const markingCode = c.req.param('markingCode');
+// GET /lookup - Lookup entry list data
+inspectionReportRoutes.get('/lookup', async (c) => {
+  const search = c.req.query('search') || '';
   try {
     const results = await prisma.vwtbEntryListCustomer.findMany({
-      where: { fdMarkingCode: { contains: markingCode } },
+      where: {
+        OR: [
+          { fdMarkingCode: { contains: search } },
+          { fdMarkingNo: { contains: search } },
+          { fdCustName: { contains: search } },
+        ],
+      },
       take: 20
     });
     return c.json(results);
