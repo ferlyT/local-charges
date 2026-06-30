@@ -6,21 +6,28 @@ import toast from 'react-hot-toast';
 
 interface TrashItem {
   fdId: number;
-  fdNomorForm: string;
+  fdNomorForm?: string;
+  fdReportNumber?: string;
   fdDeletedAt: string;
   user?: { fdNama: string };
-  details: { fdNamaCustomer: string; fdNoInputan: string }[];
+  details?: { fdNamaCustomer: string; fdNoInputan: string }[];
+  fdNamaCustomer?: string;
 }
+
+type TabType = 'local-charges' | 'inspection-reports';
 
 export default function RecycleBin() {
   const [page, setPage] = useState(1);
   const limit = 20;
   const queryClient = useQueryClient();
 
+  const [activeTab, setActiveTab] = useState<TabType>('local-charges');
+  
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['trash', page, limit],
+    queryKey: ['trash', activeTab, page, limit],
     queryFn: async () => {
-      const res = await api.get('/local-charges/trash', {
+      const endpoint = activeTab === 'local-charges' ? '/local-charges/trash' : '/inspection-reports/trash';
+      const res = await api.get(endpoint, {
         params: { page, limit }
       });
       return res.data;
@@ -29,12 +36,14 @@ export default function RecycleBin() {
 
   const restoreMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.patch(`/local-charges/${id}/restore`);
+      const endpoint = activeTab === 'local-charges' ? `/local-charges/${id}/restore` : `/inspection-reports/${id}/restore`;
+      await api.patch(endpoint);
     },
     onSuccess: () => {
       toast.success('Form restored successfully');
       queryClient.invalidateQueries({ queryKey: ['trash'] });
       queryClient.invalidateQueries({ queryKey: ['localCharges'] });
+      queryClient.invalidateQueries({ queryKey: ['inspectionReports'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to restore form');
@@ -43,7 +52,8 @@ export default function RecycleBin() {
 
   const permanentDeleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/local-charges/${id}/permanent`);
+      const endpoint = activeTab === 'local-charges' ? `/local-charges/${id}/permanent` : `/inspection-reports/${id}/permanent`;
+      await api.delete(endpoint);
     },
     onSuccess: () => {
       toast.success('Form permanently deleted');
@@ -66,6 +76,12 @@ export default function RecycleBin() {
     }
   };
 
+  // Reset page when switching tabs
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-secondary/10">
@@ -78,6 +94,29 @@ export default function RecycleBin() {
             Manage soft-deleted forms. Restore them to the dashboard or permanently delete them.
           </p>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 border-b border-secondary/20 pb-0 mb-4">
+        <button
+          onClick={() => handleTabChange('local-charges')}
+          className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'local-charges' 
+              ? 'border-tertiary text-tertiary' 
+              : 'border-transparent text-secondary hover:text-primary'
+          }`}
+        >
+          Local Charges
+        </button>
+        <button
+          onClick={() => handleTabChange('inspection-reports')}
+          className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'inspection-reports' 
+              ? 'border-tertiary text-tertiary' 
+              : 'border-transparent text-secondary hover:text-primary'
+          }`}
+        >
+          Inspection Reports
+        </button>
       </div>
 
       <div className="bg-surface shadow-md border border-secondary/20 rounded-lg overflow-hidden">
@@ -116,10 +155,12 @@ export default function RecycleBin() {
                 data?.data.map((item: TrashItem) => (
                   <tr key={item.fdId} className="hover:bg-neutral/40 transition-colors duration-150">
                     <td className="px-6 py-4 whitespace-nowrap text-[0.95rem] font-semibold text-primary">
-                      {item.fdNomorForm}
+                      {item.fdNomorForm || item.fdReportNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-[0.95rem] text-secondary">
-                      <span className="font-medium text-primary">{item.details?.[0]?.fdNamaCustomer || '-'}</span>
+                      <span className="font-medium text-primary">
+                        {item.details?.[0]?.fdNamaCustomer || item.fdNamaCustomer || '-'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-[0.9rem] text-secondary">
                       {new Date(item.fdDeletedAt).toLocaleString('id-ID')}
