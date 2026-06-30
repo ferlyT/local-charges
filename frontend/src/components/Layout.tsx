@@ -111,7 +111,7 @@ export default function Layout() {
               <ThemeToggle />
             </div>
           )}
-          <div className={`flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'} w-full gap-2`}>
+          <div className={`flex ${isSidebarOpen ? 'flex-row items-center justify-between' : 'flex-col items-center justify-center'} w-full gap-2`}>
             {isSidebarOpen && (
               <div className="flex items-center gap-3 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/profile')}>
                 {user?.avatar ? (
@@ -129,11 +129,11 @@ export default function Layout() {
             )}
             
             {!isSidebarOpen && (
-              <div className="mb-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/profile')} title={user?.name}>
+              <div className="mb-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/profile')} title={user?.name}>
                 {user?.avatar ? (
-                  <img src={resolveAvatarUrl(user.avatar) ?? user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner flex-shrink-0" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'U') + '&background=random' }} />
+                  <img src={resolveAvatarUrl(user.avatar) ?? user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover shadow-inner flex-shrink-0 min-w-[36px]" onError={(e) => { (e.target as any).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user?.name || 'U') + '&background=random' }} />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-tertiary/10 text-tertiary flex items-center justify-center font-bold flex-shrink-0 shadow-inner">
+                  <div className="w-9 h-9 rounded-full bg-tertiary/10 text-tertiary flex items-center justify-center font-bold flex-shrink-0 shadow-inner min-w-[36px]">
                     {user?.name?.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -142,7 +142,7 @@ export default function Layout() {
             
             <button 
               onClick={handleLogout}
-              className={`text-secondary hover:text-tertiary transition-colors p-2 rounded-md hover:bg-secondary/10 ${!isSidebarOpen && 'w-full flex justify-center mb-1'}`}
+              className={`text-secondary hover:text-tertiary transition-colors p-2 rounded-md hover:bg-secondary/10 ${!isSidebarOpen && 'w-full flex justify-center'}`}
               title={t('nav_logout')}
             >
               <LogOut size={18} />
