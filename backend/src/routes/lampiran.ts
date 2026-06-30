@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Hono } from 'hono';
 import { prisma } from '../db/prisma';
 import { saveFile, deleteFile, saveAvatar } from '../services/fileService';

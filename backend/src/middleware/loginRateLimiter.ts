@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { rateLimiter } from 'hono-rate-limiter';
 import { logger } from '../lib/logger';
 

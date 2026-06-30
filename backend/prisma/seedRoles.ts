@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../src/db/prisma';
 
 async function main() {

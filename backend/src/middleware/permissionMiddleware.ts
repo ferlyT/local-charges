@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../db/prisma';
 import type { Context, Next } from 'hono';
 

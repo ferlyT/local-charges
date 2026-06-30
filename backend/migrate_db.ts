@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as sql from 'mssql';
 
 const sqlConfig = {

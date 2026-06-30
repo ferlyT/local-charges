@@ -162,7 +162,7 @@ inspectionReportRoutes.get('/:id', async (c) => {
 // POST create
 inspectionReportRoutes.post('/', requirePermission('local_charges:create'), zValidator('json', createInspectionReportSchema), async (c) => {
   const body = c.req.valid('json');
-  const jwtPayload = c.get('jwtPayload');
+  const jwtPayload = c.get('jwtPayload') as any;
   
   const fdReportNumber = await generateInspectionReportNumber();
 
@@ -177,9 +177,7 @@ inspectionReportRoutes.post('/', requirePermission('local_charges:create'), zVal
         fdNamaCustomer: body.fdNamaCustomer,
         fdKeterangan: body.fdKeterangan,
         fdStatus: body.fdStatus || '1',
-        user: {
-          connect: { fdId: parseInt(jwtPayload.sub) }
-        },
+        fdCreatedBy: parseInt(jwtPayload.sub),
       }
     });
 

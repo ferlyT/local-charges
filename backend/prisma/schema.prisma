@@ -134,7 +134,7 @@ model tbInspectionReport {
   fdUpdatedAt      DateTime                     @default(now()) @updatedAt
   fdDeletedAt      DateTime?
 
-  entryList        VwtbEntryListCustomer        @relation(fields: [fdListCode], references: [fdListCode])
+  entryList        VwtbEntryListCustomer?       @relation(fields: [fdListCode], references: [fdListCode])
   lampiran         tbInspectionReportLampiran[]
 
   @@map("tbInspectionReport")
