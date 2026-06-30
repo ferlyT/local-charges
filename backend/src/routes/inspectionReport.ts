@@ -30,13 +30,13 @@ inspectionReportRoutes.get('/lookup', async (c) => {
   const search = c.req.query('search') || '';
   try {
     const results = await prisma.vwtbEntryListCustomer.findMany({
-      where: {
+      where: search ? {
         OR: [
-          { fdMarkingCode: { contains: search } },
-          { fdMarkingNo: { contains: search } },
+          { fdMarkingCode: { startsWith: search } },
+          { fdMarkingNo: { startsWith: search } },
           { fdCustName: { contains: search } },
         ],
-      },
+      } : undefined,
       take: 20
     });
     return c.json(results);
@@ -139,6 +139,9 @@ inspectionReportRoutes.get('/trash', requirePermission('local_charges:delete'), 
 // GET detail
 inspectionReportRoutes.get('/:id', async (c) => {
   const id = Number(c.req.param('id'));
+  if (isNaN(id)) {
+    return c.json({ message: 'Invalid ID' }, 400);
+  }
 
   const data = await prisma.tbInspectionReport.findFirst({
     where: { fdId: id, fdDeletedAt: null },
