@@ -5,6 +5,9 @@ import { Search, Eye, Plus, ArrowRight, ClipboardList, LayoutList, ChevronUp, Ch
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuthStore } from '../stores/authStore';
 import { hasPermission } from '../lib/permissions';
+import AnalyticsSection from '../components/AnalyticsSection';
+import { useInspectionReportsStats } from '../hooks/useInspectionReportsStats';
+import { useTranslation } from '../hooks/useTranslation';
 
 const statusMap: Record<string, { label: string; className: string }> = {
   '1': { label: 'Draft', className: 'badge-draft' },
@@ -24,11 +27,14 @@ export default function InspectionReportsPage() {
   const [sortBy, setSortBy] = useState('fdCreatedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [limit, setLimit] = useState(20);
+  const [showAnalytics, setShowAnalytics] = useState(true);
 
   const currentUser = useAuthStore(state => state.user);
+  const { t, language } = useTranslation();
   
   const debouncedSearch = useDebounce(search, 500);
   const { data, isLoading, isError } = useInspectionReports(page, limit, debouncedSearch, sortBy, sortOrder);
+  const { data: stats, isLoading: statsLoading } = useInspectionReportsStats();
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -45,10 +51,10 @@ export default function InspectionReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-secondary/10">
         <div>
           <h1 className="text-[2.6rem] font-display text-primary tracking-[-0.02em] leading-none mb-2">
-            Inspection Reports
+            {t('ir_title')}
           </h1>
           <p className="text-[0.95rem] text-secondary">
-            Manage, filter, and track inspection reports and details.
+            {t('ir_subtitle')}
           </p>
         </div>
         {hasPermission(currentUser, 'inspection_reports:create') && (
@@ -57,10 +63,30 @@ export default function InspectionReportsPage() {
             className="btn-primary inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99]"
           >
             <Plus size={18} />
-            New Report
+            {t('ir_new_btn')}
           </Link>
         )}
       </div>
+
+      <div className="flex items-center justify-between mt-2 mb-2">
+        <h2 className="text-xl font-bold font-display text-primary flex items-center gap-2">
+          {t('ir_overview')}
+        </h2>
+        <button 
+          onClick={() => setShowAnalytics(!showAnalytics)}
+          className="text-sm font-medium text-secondary hover:text-primary transition-colors flex items-center gap-1 bg-surface border border-secondary/20 px-3 py-1.5 rounded-full shadow-sm hover:shadow active:scale-95"
+        >
+          {showAnalytics ? (
+            <><ChevronUp size={14} /> {t('ir_hide_analytics')}</>
+          ) : (
+            <><ChevronDown size={14} /> {t('ir_show_analytics')}</>
+          )}
+        </button>
+      </div>
+
+      {showAnalytics && (
+        <AnalyticsSection stats={stats as any} isLoading={statsLoading} />
+      )}
 
       <div className="card p-4 flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-4 z-20 shadow-lg border-secondary/20 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
         <div className="relative w-full flex-1">
@@ -70,7 +96,7 @@ export default function InspectionReportsPage() {
           <input
             type="text"
             className="form-input pl-10 w-full"
-            placeholder="Search by report number, customer, marking code, marking no..."
+            placeholder={t('ir_search_placeholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -80,7 +106,7 @@ export default function InspectionReportsPage() {
         </div>
         <div className="flex items-center gap-2 border border-secondary/20 rounded-lg p-1 shrink-0 self-end sm:self-auto">
           <div className="flex items-center pl-2 pr-2 border-r border-secondary/20">
-            <span className="text-[0.75rem] text-secondary font-medium mr-2 hidden sm:inline">Per page:</span>
+            <span className="text-[0.75rem] text-secondary font-medium mr-2 hidden sm:inline">{t('ir_per_page')}</span>
             <select
               className="text-sm bg-transparent font-medium text-primary cursor-pointer focus:outline-none"
               value={limit}
@@ -111,7 +137,7 @@ export default function InspectionReportsPage() {
                   onClick={() => handleSort('fdReportNumber')}
                 >
                   <span className="flex items-center gap-1.5">
-                    No. Report
+                    {t('col_report_no')}
                     <SortIcon field="fdReportNumber" sortBy={sortBy} sortOrder={sortOrder} />
                   </span>
                 </th>
@@ -121,7 +147,7 @@ export default function InspectionReportsPage() {
                   onClick={() => handleSort('fdReportDate')}
                 >
                   <span className="flex items-center gap-1.5">
-                    Report Date
+                    {t('col_report_date')}
                     <SortIcon field="fdReportDate" sortBy={sortBy} sortOrder={sortOrder} />
                   </span>
                 </th>
@@ -131,12 +157,12 @@ export default function InspectionReportsPage() {
                   onClick={() => handleSort('fdNamaCustomer')}
                 >
                   <span className="flex items-center gap-1.5">
-                    Customer
+                    {t('col_customer')}
                     <SortIcon field="fdNamaCustomer" sortBy={sortBy} sortOrder={sortOrder} />
                   </span>
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">
-                  Marking Info
+                  {t('col_marking_info')}
                 </th>
                 <th
                   scope="col"
@@ -144,11 +170,11 @@ export default function InspectionReportsPage() {
                   onClick={() => handleSort('fdStatus')}
                 >
                   <span className="flex items-center gap-1.5">
-                    Status
+                    {t('col_status')}
                     <SortIcon field="fdStatus" sortBy={sortBy} sortOrder={sortOrder} />
                   </span>
                 </th>
-                <th scope="col" className="px-6 py-4 text-right text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">Actions</th>
+                <th scope="col" className="px-6 py-4 text-right text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/15">
@@ -171,7 +197,7 @@ export default function InspectionReportsPage() {
               ) : isError ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-sm text-rose-500 font-medium">
-                    Failed to fetch inspection reports. Please try again.
+                    {t('ir_err_fetch')}
                   </td>
                 </tr>
               ) : data?.data.length === 0 ? (
@@ -181,13 +207,13 @@ export default function InspectionReportsPage() {
                       <div className="w-16 h-16 bg-neutral rounded-full flex items-center justify-center mb-4 border border-secondary/20">
                         <ClipboardList className="w-8 h-8 text-secondary" />
                       </div>
-                      <h3 className="text-lg font-semibold text-primary mb-1">No reports found</h3>
+                      <h3 className="text-lg font-semibold text-primary mb-1">{t('ir_empty_title')}</h3>
                       <p className="text-secondary text-sm leading-relaxed mb-4">
-                        We couldn't find any inspection reports matching your search parameters. Try adjusting your query or create a new report.
+                        {t('ir_empty_desc')}
                       </p>
                       {hasPermission(currentUser, 'local_charges:create') && (
                         <Link to="/inspection-reports/new" className="btn-secondary py-2 px-4 text-sm flex items-center gap-1.5">
-                          <Plus size={16} /> Create Report
+                          <Plus size={16} /> {t('ir_create_btn')}
                         </Link>
                       )}
                     </div>
@@ -202,7 +228,7 @@ export default function InspectionReportsPage() {
                         {report.fdReportNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-[0.9rem] text-secondary">
-                        {new Date(report.fdReportDate).toLocaleDateString('id-ID', {
+                        {new Date(report.fdReportDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'
@@ -236,7 +262,7 @@ export default function InspectionReportsPage() {
                             title="View/Edit Details"
                           >
                             <Eye size={18} />
-                            <span className="hidden sm:inline">Details</span>
+                            <span className="hidden sm:inline">{t('ir_details_btn')}</span>
                             <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                           </Link>
                         </div>
@@ -255,7 +281,7 @@ export default function InspectionReportsPage() {
             <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <p className="text-[0.9rem] text-secondary">
-                  Showing <span className="font-semibold text-primary">{(page - 1) * limit + 1}</span> to <span className="font-semibold text-primary">{Math.min(page * limit, data.meta.total)}</span> of <span className="font-semibold text-primary">{data.meta.total}</span> records
+                  {t('pagination_showing', { from: (page - 1) * limit + 1, to: Math.min(page * limit, data.meta.total), total: data.meta.total })}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -264,17 +290,17 @@ export default function InspectionReportsPage() {
                   disabled={page === 1}
                   className="btn-secondary px-3.5 py-2 text-sm disabled:opacity-30"
                 >
-                  Previous
+                  {t('pagination_prev')}
                 </button>
                 <div className="font-mono text-sm px-3 text-secondary">
-                  Page <span className="font-semibold text-primary">{page}</span> of <span className="font-semibold text-primary">{data.meta.totalPages}</span>
+                  {t('pagination_page', { page, total: data.meta.totalPages })}
                 </div>
                 <button
                   onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
                   disabled={page >= data.meta.totalPages}
                   className="btn-secondary px-3.5 py-2 text-sm disabled:opacity-30"
                 >
-                  Next
+                  {t('pagination_next')}
                 </button>
               </div>
             </div>

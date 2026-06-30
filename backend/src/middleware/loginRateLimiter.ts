@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 
 export const loginRateLimiter = rateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 10, // Limit each IP to 10 requests per `window` (here, per 15 minutes)
+  limit: 100, // Increased limit for easier development
   standardHeaders: "draft-6", // draft-6: `RateLimit` header; draft-7: combined `RateLimit` header
   keyGenerator: (c) => {
     return c.req.header('x-forwarded-for')?.split(',')[0].trim()

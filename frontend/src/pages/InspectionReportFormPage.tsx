@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Trash2, Save, ArrowLeft, Clock, User, Hash } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/authStore';
+import { useTranslation } from '../hooks/useTranslation';
 import MarkingCodeAutocomplete from '../components/MarkingCodeAutocomplete';
 import InspectionLampiranGrid from '../components/lampiran/InspectionLampiranGrid';
 import type { Lampiran } from '../components/lampiran/LampiranGrid';
@@ -15,6 +16,7 @@ export default function InspectionReportFormPage() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const currentUser = useAuthStore(state => state.user);
+  const { t } = useTranslation();
 
   const [form, setForm] = useState<Partial<InspectionReport>>({
     fdReportNumber: '',
@@ -77,7 +79,7 @@ export default function InspectionReportFormPage() {
     setIsSaving(true);
 
     if (!form.fdNamaCustomer || form.fdNamaCustomer.trim() === '') {
-      toast.error('Please add a Customer Name');
+      toast.error(t('ir_form_err_no_customer'));
       setIsSaving(false);
       return;
     }
@@ -95,40 +97,40 @@ export default function InspectionReportFormPage() {
 
       if (isEdit) {
         await inspectionReportsApi.update(id as string, payload);
-        toast.success('Berhasil menyimpan perubahan!');
-        navigate('/inspection-reports');
+        toast.success(t('ir_form_toast_save_ok'));
+        setTimeout(() => navigate('/inspection-reports'), 1000);
       } else {
         const res = await inspectionReportsApi.create(payload);
-        toast.success('Form berhasil dibuat! Silakan upload lampiran.');
+        toast.success(t('ir_form_toast_create_ok'));
         navigate(`/inspection-reports/${res.fdId}`);
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Gagal menyimpan form');
+      toast.error(err.response?.data?.message || t('ir_form_toast_save_err'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteLampiran = async (lampiranId: number) => {
-    if (!confirm('Are you sure you want to delete this attachment?')) return;
+    if (!confirm(t('ir_form_confirm_att_del'))) return;
     try {
       await api.delete(`/lampiran/${lampiranId}`);
       fetchLampiran();
-      toast.success('Lampiran berhasil dihapus');
+      toast.success(t('ir_form_toast_att_del_ok'));
     } catch (error) {
-      toast.error('Gagal menghapus lampiran');
+      toast.error(t('ir_form_toast_att_del_err'));
     }
   };
 
   const handleDeleteForm = async () => {
-    if (!confirm('Hapus form ini? Form akan masuk Recycle Bin dan bisa di-restore oleh admin.')) return;
+    if (!confirm(t('ir_form_confirm_delete'))) return;
     setIsSaving(true);
     try {
       await inspectionReportsApi.delete(id as string);
-      toast.success('Form berhasil dihapus');
-      navigate('/inspection-reports');
+      toast.success(t('ir_form_toast_delete_ok'));
+      setTimeout(() => navigate('/inspection-reports'), 1000);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal menghapus form');
+      toast.error(error.response?.data?.message || t('ir_form_toast_delete_err'));
       setIsSaving(false);
     }
   };
@@ -165,10 +167,10 @@ export default function InspectionReportFormPage() {
         </button>
         <div>
           <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-none mb-1">
-            {isEdit ? 'Edit Inspection Report' : 'New Inspection Report'}
+            {isEdit ? t('ir_form_title_edit') : t('ir_form_title_new')}
           </h1>
           <p className="text-secondary text-sm">
-            {isEdit ? 'Update details and view attachments for this report.' : 'Create a new inspection report entry.'}
+            {isEdit ? t('ir_form_subtitle_edit') : t('ir_form_subtitle_new')}
           </p>
         </div>
       </div>
@@ -177,24 +179,24 @@ export default function InspectionReportFormPage() {
         {/* Header Information Section Card */}
         <div className="card bg-surface flex flex-col md:flex-row gap-5 justify-between md:items-center">
           <div>
-            <h2 className="text-[1rem] font-semibold text-primary">Metadata</h2>
-            <p className="text-secondary text-xs mt-0.5">Automated registration tracking data.</p>
+            <h2 className="text-[1rem] font-semibold text-primary">{t('ir_form_meta_title')}</h2>
+            <p className="text-secondary text-xs mt-0.5">{t('ir_form_meta_sub')}</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <div className="bg-neutral px-3.5 py-2 rounded-md border border-secondary/15 flex items-center gap-2 text-[0.88rem] font-medium text-primary">
               <Hash size={14} className="text-secondary" />
-              <span className="text-[0.72rem] text-secondary uppercase font-semibold">No:</span>
-              <span className="font-mono">{form.fdReportNumber || 'Auto Generated'}</span>
+              <span className="text-[0.72rem] text-secondary uppercase font-semibold">{t('ir_form_lbl_no')}</span>
+              <span className="font-mono">{form.fdReportNumber || t('ir_form_auto_no')}</span>
             </div>
             <div className="bg-neutral px-3.5 py-2 rounded-md border border-secondary/15 flex items-center gap-2 text-[0.88rem] font-medium text-primary">
               <User size={14} className="text-secondary" />
-              <span className="text-[0.72rem] text-secondary uppercase font-semibold">Author:</span>
+              <span className="text-[0.72rem] text-secondary uppercase font-semibold">{t('ir_form_lbl_author')}</span>
               <span>{form.user?.fdNama || currentUser?.name || 'Unknown'}</span>
             </div>
             {(form.fdCreatedAt || isEdit) && (
               <div className="bg-neutral px-3.5 py-2 rounded-md border border-secondary/15 flex items-center gap-2 text-[0.88rem] font-medium text-primary">
                 <Clock size={14} className="text-secondary" />
-                <span className="text-[0.72rem] text-secondary uppercase font-semibold">Created:</span>
+                <span className="text-[0.72rem] text-secondary uppercase font-semibold">{t('ir_form_lbl_created')}</span>
                 <span>
                   {form.fdCreatedAt ? new Date(form.fdCreatedAt).toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}
                 </span>
@@ -214,7 +216,7 @@ export default function InspectionReportFormPage() {
                 : 'border-transparent text-secondary hover:text-primary'
             }`}
           >
-            Report Details
+            {t('ir_form_tab_details')}
           </button>
           {isEdit && (
             <button
@@ -226,7 +228,7 @@ export default function InspectionReportFormPage() {
                   : 'border-transparent text-secondary hover:text-primary'
               }`}
             >
-              Attachments
+              {t('ir_form_tab_attachments')}
               <span className={`px-1.5 py-0.5 rounded-full text-[0.65rem] ${
                 activeTab === 'attachments' ? 'bg-tertiary/10 text-tertiary' : 'bg-secondary/10 text-secondary'
               }`}>
@@ -242,105 +244,159 @@ export default function InspectionReportFormPage() {
             <>
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-[1.1rem] font-semibold text-primary">Report Details</h2>
-                  <p className="text-secondary text-xs mt-0.5">Specify customer and relevant inspection identifiers.</p>
+                  <h2 className="text-[1.1rem] font-semibold text-primary">{t('ir_form_section_title')}</h2>
+                  <p className="text-secondary text-xs mt-0.5">{t('ir_form_section_sub')}</p>
                 </div>
               </div>
               
               <div className="space-y-6">
-                <div className="relative p-5 border border-secondary/20 rounded-lg bg-neutral/30 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">
-                        Report Date <span className="text-tertiary">*</span>
-                      </label>
-                      <input
-                        required
-                        type="datetime-local"
-                        value={form.fdReportDate}
-                        onChange={(e) => setForm(prev => ({ ...prev, fdReportDate: e.target.value }))}
-                        className="form-input"
-                      />
-                    </div>
+                <div className="p-6 border border-secondary/20 rounded-lg bg-surface shadow-sm space-y-8">
+                  {/* IDENTIFICATION SECTION */}
+                  <div>
+                    <h3 className="text-[0.7rem] font-bold text-secondary tracking-widest uppercase mb-4">{t('ir_form_sec_identification')}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-primary text-[0.8rem] font-medium mb-1.5">
+                          {t('ir_form_lbl_report_date')} <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          required
+                          type="datetime-local"
+                          value={form.fdReportDate}
+                          onChange={(e) => setForm(prev => ({ ...prev, fdReportDate: e.target.value }))}
+                          className="form-input"
+                        />
+                      </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">
-                        Marking Code (Auto Fill lookup)
-                      </label>
-                      <MarkingCodeAutocomplete
-                        value={form.fdMarkingCode || ''}
-                        onChange={(val) => setForm(prev => ({ ...prev, fdMarkingCode: val }))}
-                        onSelect={(data) => {
-                          setForm(prev => ({
-                            ...prev,
-                            fdMarkingCode: data.fdMarkingCode,
-                            fdListCode: data.fdListCode,
-                            fdMarkingNo: data.fdMarkingNo,
-                            fdNamaCustomer: data.fdCustName
-                          }));
-                        }}
-                      />
+                      <div>
+                        <label className="block text-primary text-[0.8rem] font-medium mb-1.5">
+                          {t('ir_form_lbl_marking_code')}
+                        </label>
+                        <MarkingCodeAutocomplete
+                          value={form.fdMarkingCode || ''}
+                          onChange={(val) => setForm(prev => ({ 
+                            ...prev, 
+                            fdMarkingCode: val,
+                            fdListCode: '',
+                            fdMarkingNo: '',
+                            fdNamaCustomer: '',
+                            fdTerima: ''
+                          }))}
+                          onSelect={(data) => {
+                            setForm(prev => ({
+                              ...prev,
+                              fdMarkingCode: data.fdMarkingCode,
+                              fdListCode: data.fdListCode,
+                              fdMarkingNo: data.fdMarkingNo,
+                              fdNamaCustomer: data.fdCustName || '',
+                              fdTerima: data.fdTerima || ''
+                            }));
+                          }}
+                        />
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">
-                        Customer Name <span className="text-tertiary">*</span>
+                  <hr className="border-secondary/20" />
+
+                  {/* CUSTOMER SECTION */}
+                  <div>
+                    <h3 className="text-[0.7rem] font-bold text-secondary tracking-widest uppercase mb-4">{t('ir_form_sec_customer')}</h3>
+                    <div>
+                      <label className="block text-primary text-[0.8rem] font-medium mb-1.5">
+                        {t('ir_form_lbl_cust_name')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         required
                         type="text"
+                        disabled={!!form.fdListCode}
                         value={form.fdNamaCustomer || ''}
                         onChange={(e) => setForm(prev => ({ ...prev, fdNamaCustomer: e.target.value.toUpperCase() }))}
-                        className="form-input"
-                        placeholder="CUSTOMER NAME"
+                        className={`form-input ${form.fdListCode ? 'opacity-70 cursor-not-allowed bg-neutral/50' : ''}`}
+                        placeholder={t('ir_form_ph_cust_name')}
                       />
                     </div>
-                    
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  </div>
+
+                  <hr className="border-secondary/20" />
+
+                  {/* INSPECTION DETAILS SECTION */}
+                  <div>
+                    <h3 className="text-[0.7rem] font-bold text-secondary tracking-widest uppercase mb-4">{t('ir_form_sec_insp_details')}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                       <div>
-                        <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">Marking No</label>
+                        <label className="block text-primary text-[0.8rem] font-medium mb-1.5">{t('ir_form_lbl_marking_no')}</label>
                         <input
                           type="text"
+                          disabled={!!form.fdListCode}
                           value={form.fdMarkingNo || ''}
                           onChange={(e) => setForm(prev => ({ ...prev, fdMarkingNo: e.target.value.toUpperCase() }))}
-                          className="form-input"
-                          placeholder="MARKING NO"
+                          className={`form-input ${form.fdListCode ? 'opacity-70 cursor-not-allowed bg-neutral/50' : ''}`}
+                          placeholder={t('ir_form_ph_marking_no')}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">List Code</label>
+                        <label className="block text-primary text-[0.8rem] font-medium mb-1.5">{t('ir_form_lbl_list_code')}</label>
                         <input
                           type="text"
+                          disabled={!!form.fdListCode}
                           value={form.fdListCode || ''}
                           onChange={(e) => setForm(prev => ({ ...prev, fdListCode: e.target.value.toUpperCase() }))}
-                          className="form-input"
-                          placeholder="LIST CODE"
+                          className={`form-input ${form.fdListCode ? 'opacity-70 cursor-not-allowed bg-neutral/50' : ''}`}
+                          placeholder={t('ir_form_ph_list_code')}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-primary text-[0.8rem] font-medium mb-1.5">{t('ir_form_lbl_terima')}</label>
+                        <input
+                          type="text"
+                          disabled={!!form.fdListCode}
+                          value={form.fdTerima || ''}
+                          onChange={(e) => setForm(prev => ({ ...prev, fdTerima: e.target.value.toUpperCase() }))}
+                          className={`form-input ${form.fdListCode ? 'opacity-70 cursor-not-allowed bg-neutral/50' : ''}`}
+                          placeholder={t('ir_form_ph_terima')}
                         />
                       </div>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">Remarks (Keterangan)</label>
+                    <div>
+                      <label className="block text-primary text-[0.8rem] font-medium mb-1.5">{t('ir_form_lbl_remarks')}</label>
                       <textarea
                         rows={3}
                         value={form.fdKeterangan || ''}
                         onChange={(e) => setForm(prev => ({ ...prev, fdKeterangan: e.target.value.toUpperCase() }))}
                         className="form-input resize-none"
-                        placeholder="Remarks info..."
+                        placeholder={t('ir_form_ph_remarks')}
                       />
                     </div>
+                  </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-primary text-[0.72rem] font-semibold tracking-wide uppercase mb-1">Status</label>
-                      <select
-                        value={form.fdStatus || '1'}
-                        onChange={(e) => setForm(prev => ({ ...prev, fdStatus: e.target.value }))}
-                        className="form-input"
+                  <hr className="border-secondary/20" />
+
+                  {/* STATUS SECTION */}
+                  <div className="flex items-center justify-between">
+                    <label className="block text-primary text-[0.9rem] font-semibold">{t('ir_form_lbl_status')}</label>
+                    <div className="flex bg-surface border border-secondary/20 rounded-md p-1 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => setForm(prev => ({ ...prev, fdStatus: '1' }))}
+                        className={`px-5 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                          form.fdStatus === '1' ? 'bg-black text-white' : 'text-primary hover:bg-neutral'
+                        }`}
                       >
-                        <option value="1">Draft</option>
-                        <option value="2">Done</option>
-                      </select>
+                        {t('ir_form_status_draft')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm(prev => ({ ...prev, fdStatus: '2' }))}
+                        className={`px-5 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                          form.fdStatus === '2' ? 'bg-black text-white' : 'text-primary hover:bg-neutral'
+                        }`}
+                      >
+                        {t('ir_form_status_done')}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -351,8 +407,8 @@ export default function InspectionReportFormPage() {
           {activeTab === 'attachments' && isEdit && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-[1.1rem] font-semibold text-primary">Uploaded Attachments</h2>
-                <p className="text-secondary text-xs mt-0.5">View, download, or edit files uploaded to this inspection report.</p>
+                <h2 className="text-[1.1rem] font-semibold text-primary">{t('ir_form_att_title')}</h2>
+                <p className="text-secondary text-xs mt-0.5">{t('ir_form_att_sub')}</p>
               </div>
               <div className="border-t border-secondary/15 pt-4">
                 <InspectionLampiranGrid 
@@ -378,7 +434,7 @@ export default function InspectionReportFormPage() {
                 className="btn border border-rose-500/30 text-rose-500 hover:bg-rose-500 hover:text-white px-4 py-2 flex items-center gap-2"
               >
                 <Trash2 size={16} />
-                <span className="hidden sm:inline">Delete</span>
+                <span className="hidden sm:inline">{t('ir_form_btn_delete')}</span>
               </button>
             )}
           </div>
@@ -388,7 +444,7 @@ export default function InspectionReportFormPage() {
               onClick={() => navigate(-1)}
               className="btn-secondary"
             >
-              {canSave ? 'Cancel' : 'Back'}
+              {canSave ? t('ir_form_btn_cancel') : t('ir_form_btn_back')}
             </button>
             {canSave && (
             <button
@@ -397,7 +453,7 @@ export default function InspectionReportFormPage() {
               className="btn-primary flex items-center gap-2"
             >
               <Save size={16} />
-              {isSaving ? 'Saving...' : (isEdit ? 'Update Form' : 'Save & Continue')}
+              {isSaving ? t('ir_form_btn_saving') : (isEdit ? t('ir_form_btn_update') : t('ir_form_btn_save'))}
             </button>
           )}
           </div>

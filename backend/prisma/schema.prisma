@@ -110,6 +110,7 @@ model VwtbEntryListCustomer {
   fdListCode    String               @id @db.Char(7)
   fdMarkingCode String               @db.Char(30)
   fdMarkingNo   String               @db.Char(50)
+  fdTerima      String?              
   fdCustName    String?              @db.VarChar(150)
   reports       tbInspectionReport[]
 
@@ -124,6 +125,7 @@ model tbInspectionReport {
   fdMarkingCode    String                       @db.Char(30)
   fdMarkingNo      String                       @db.Char(50)
   fdNamaCustomer   String                       @db.VarChar(150)
+  fdTerima         String?                      @db.VarChar(50)
   fdKeterangan     String                       @db.VarChar(Max)
   fdStatus         String                       @default("1") @db.VarChar(1)
   

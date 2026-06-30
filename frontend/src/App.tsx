@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import LocalChargesPage from './pages/LocalChargesPage';
 import FormPage from './pages/FormPage';
 import Register from './pages/Register';
 import Users from './pages/Users';
@@ -91,6 +92,7 @@ function App() {
             } 
           >
             <Route index element={<Dashboard />} />
+            <Route path="local-charges" element={<PermissionRoute permission="local_charges:create"><LocalChargesPage /></PermissionRoute>} />
             <Route path="new" element={<PermissionRoute permission="local_charges:create"><FormPage /></PermissionRoute>} />
             <Route path="form/:id" element={<PermissionRoute permission="local_charges:create"><FormPage /></PermissionRoute>} />
             <Route path="users" element={<Users />} />

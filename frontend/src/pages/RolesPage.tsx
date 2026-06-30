@@ -6,6 +6,7 @@ import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import { Navigate } from 'react-router-dom';
 import { hasPermission } from '../lib/permissions';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface RoleType {
   fdId: number;
@@ -46,6 +47,7 @@ const PERMISSION_GROUPS = [
 export default function RolesPage() {
   const currentUser = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<RoleType | null>(null);
@@ -73,12 +75,12 @@ export default function RolesPage() {
       await api.post('/roles', data);
     },
     onSuccess: () => {
-      toast.success('Role created successfully');
+      toast.success(t('roles_toast_create_success'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to create role');
+      toast.error(err.response?.data?.message || t('roles_toast_create_err'));
     }
   });
 
@@ -87,12 +89,12 @@ export default function RolesPage() {
       await api.put(`/roles/${data.id}`, data);
     },
     onSuccess: () => {
-      toast.success('Role updated successfully');
+      toast.success(t('roles_toast_update_success'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       closeModal();
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to update role');
+      toast.error(err.response?.data?.message || t('roles_toast_update_err'));
     }
   });
 
@@ -101,11 +103,11 @@ export default function RolesPage() {
       await api.delete(`/roles/${id}`);
     },
     onSuccess: () => {
-      toast.success('Role deleted successfully');
+      toast.success(t('roles_toast_del_success'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to delete role');
+      toast.error(err.response?.data?.message || t('roles_toast_del_err'));
     }
   });
 
@@ -151,7 +153,7 @@ export default function RolesPage() {
   };
 
   const handleDelete = (role: RoleType) => {
-    if (window.confirm(`Are you sure you want to delete the role "${role.fdNama}"?`)) {
+    if (window.confirm(t('roles_confirm_del', { name: role.fdNama }))) {
       deleteRoleMutation.mutate(role.fdId);
     }
   };
@@ -169,10 +171,10 @@ export default function RolesPage() {
           </div>
           <div>
             <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-none mb-1">
-              Roles & Permissions
+              {t('roles_title')}
             </h1>
             <p className="text-secondary text-sm">
-              Manage system roles and their access levels.
+              {t('roles_subtitle')}
             </p>
           </div>
         </div>
@@ -181,7 +183,7 @@ export default function RolesPage() {
           onClick={() => openModal()}
           className="bg-tertiary hover:bg-tertiary/90 text-white font-semibold py-2.5 px-5 rounded-lg shadow-md shadow-tertiary/20 flex items-center gap-2 transition-all active:scale-[0.98]"
         >
-          <Plus size={18} /> New Role
+          <Plus size={18} /> {t('roles_btn_new')}
         </button>
       </div>
 
@@ -193,7 +195,7 @@ export default function RolesPage() {
                 <h3 className="text-lg font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                   <Shield size={16} className="text-tertiary" /> {role.fdNama}
                 </h3>
-                <p className="text-sm text-secondary mt-1 min-h-[2.5rem]">{role.fdDeskripsi || 'No description'}</p>
+                <p className="text-sm text-secondary mt-1 min-h-[2.5rem]">{role.fdDeskripsi || t('roles_no_desc')}</p>
               </div>
               <div className="flex gap-1">
                 <button 
@@ -207,7 +209,7 @@ export default function RolesPage() {
                     onClick={() => handleDelete(role)}
                     disabled={role.userCount > 0}
                     className="p-1.5 text-secondary hover:text-rose-500 hover:bg-rose-500/10 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title={role.userCount > 0 ? "Cannot delete role with assigned users" : "Delete role"}
+                    title={role.userCount > 0 ? t('roles_tooltip_del_disabled') : t('roles_btn_del')}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -217,7 +219,7 @@ export default function RolesPage() {
             
             <div className="mt-5 flex-1">
               <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-3 border-b border-secondary/10 pb-1.5">
-                Permissions
+                {t('roles_permissions')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {role.permissions.map(p => (
@@ -226,13 +228,13 @@ export default function RolesPage() {
                   </span>
                 ))}
                 {role.permissions.length === 0 && (
-                  <span className="text-xs text-secondary italic py-1">No permissions</span>
+                  <span className="text-xs text-secondary italic py-1">{t('roles_no_permissions')}</span>
                 )}
               </div>
             </div>
             
             <div className="mt-5 pt-3 border-t border-secondary/10 flex justify-between items-center text-sm">
-              <span className="text-secondary">Assigned Users</span>
+              <span className="text-secondary">{t('roles_assigned_users')}</span>
               <span className="font-bold text-primary bg-secondary/10 px-2 py-0.5 rounded-md">
                 {role.userCount}
               </span>
@@ -246,7 +248,7 @@ export default function RolesPage() {
           <div className="bg-surface rounded-xl border border-secondary/20 shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-5 border-b border-secondary/10">
               <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-                {editingRole ? 'Edit Role' : 'Create New Role'}
+                {editingRole ? t('roles_modal_edit') : t('roles_modal_create')}
               </h2>
               <button onClick={closeModal} className="text-secondary hover:text-primary transition-colors p-1 rounded-md hover:bg-secondary/10">
                 <X size={20} />
@@ -256,7 +258,7 @@ export default function RolesPage() {
             <div className="p-5 overflow-y-auto">
               <form id="roleForm" onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-secondary mb-1.5">Role Name</label>
+                  <label className="block text-sm font-semibold text-secondary mb-1.5">{t('roles_lbl_name')}</label>
                   <input
                     type="text"
                     value={formData.fdNama}
@@ -268,12 +270,12 @@ export default function RolesPage() {
                     title="Only lowercase letters, numbers, underscores, and hyphens"
                   />
                   {editingRole?.fdNama === 'admin' && (
-                    <p className="text-xs text-rose-500 mt-1">Core admin role name cannot be changed.</p>
+                    <p className="text-xs text-rose-500 mt-1">{t('roles_err_admin_name')}</p>
                   )}
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-secondary mb-1.5">Description (Optional)</label>
+                  <label className="block text-sm font-semibold text-secondary mb-1.5">{t('roles_lbl_desc')}</label>
                   <input
                     type="text"
                     value={formData.fdDeskripsi}
@@ -283,7 +285,7 @@ export default function RolesPage() {
                 </div>
                 
                 <div className="pt-3">
-                  <label className="block text-sm font-semibold text-secondary mb-3">Permissions</label>
+                  <label className="block text-sm font-semibold text-secondary mb-3">{t('roles_lbl_permissions')}</label>
                   <div className="space-y-4">
                     {PERMISSION_GROUPS.map((group, idx) => (
                       <div key={idx} className="border border-secondary/20 rounded-lg overflow-hidden bg-surface">
@@ -308,7 +310,7 @@ export default function RolesPage() {
                     ))}
                   </div>
                   {editingRole?.fdNama === 'admin' && (
-                    <p className="text-xs text-secondary mt-2 italic bg-secondary/10 p-2 rounded-md">Admin role implicitly has all permissions. These checkboxes are for display only.</p>
+                    <p className="text-xs text-secondary mt-2 italic bg-secondary/10 p-2 rounded-md">{t('roles_msg_admin_perm')}</p>
                   )}
                 </div>
               </form>
@@ -320,7 +322,7 @@ export default function RolesPage() {
                 onClick={closeModal}
                 className="px-5 py-2.5 text-sm font-semibold text-secondary hover:text-primary transition-colors"
               >
-                Cancel
+                {t('btn_cancel')}
               </button>
               <button
                 type="submit"
@@ -329,7 +331,7 @@ export default function RolesPage() {
                 className="bg-tertiary hover:bg-tertiary/90 text-white text-sm font-semibold py-2.5 px-6 rounded-lg shadow-md shadow-tertiary/20 flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70"
               >
                 <Save size={16} />
-                {editingRole ? 'Save Changes' : 'Create Role'}
+                {editingRole ? t('btn_save_changes') : t('roles_btn_create')}
               </button>
             </div>
           </div>

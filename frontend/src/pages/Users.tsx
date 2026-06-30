@@ -6,6 +6,7 @@ import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import { Navigate } from 'react-router-dom';
 import { hasPermission } from '../lib/permissions';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface UserType {
   fdId: number;
@@ -25,6 +26,7 @@ export default function Users() {
   const currentUser = useAuthStore(state => state.user);
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = React.useState('');
+  const { t, language } = useTranslation();
 
   if (!hasPermission(currentUser, 'users:manage')) {
     return <Navigate to="/" replace />;
@@ -51,11 +53,11 @@ export default function Users() {
       await api.put(`/users/${id}/status`, { fdAktif });
     },
     onSuccess: () => {
-      toast.success('User status updated successfully');
+      toast.success(t('users_toast_status_success'));
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to update user status');
+      toast.error(err.response?.data?.message || t('users_toast_status_err'));
     }
   });
 
@@ -64,11 +66,11 @@ export default function Users() {
       await api.put(`/users/${id}/role`, { fdRoleId });
     },
     onSuccess: () => {
-      toast.success('User role updated successfully');
+      toast.success(t('users_toast_role_success'));
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to update user role');
+      toast.error(err.response?.data?.message || t('users_toast_role_err'));
     }
   });
 
@@ -80,7 +82,7 @@ export default function Users() {
 
   const handleToggleStatus = (user: UserType) => {
     if (user.fdId === currentUser?.id) {
-      toast.error('You cannot deactivate your own account');
+      toast.error(t('users_err_self_deactivate'));
       return;
     }
     toggleStatusMutation.mutate({ id: user.fdId, fdAktif: !user.fdAktif });
@@ -88,7 +90,7 @@ export default function Users() {
 
   const handleChangeRole = (user: UserType, roleId: number) => {
     if (user.fdId === currentUser?.id) {
-      toast.error('You cannot change your own role');
+      toast.error(t('users_err_self_role'));
       return;
     }
     changeRoleMutation.mutate({ id: user.fdId, fdRoleId: roleId });
@@ -126,10 +128,10 @@ export default function Users() {
           </div>
           <div>
             <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-none mb-1">
-              User Management
+              {t('users_title')}
             </h1>
             <p className="text-secondary text-sm">
-              Approve new registration requests and control system roles.
+              {t('users_subtitle')}
             </p>
           </div>
         </div>
@@ -141,7 +143,7 @@ export default function Users() {
           </div>
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder={t('users_search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-surface border border-secondary/20 focus:border-tertiary/50 focus:ring-4 focus:ring-tertiary/10 rounded-xl pl-10 pr-4 py-2.5 text-[0.95rem] text-primary placeholder:text-secondary/50 outline-none transition-all duration-200"
@@ -155,12 +157,12 @@ export default function Users() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-neutral/50 border-b border-secondary/20 text-xs font-semibold text-secondary uppercase tracking-wider">
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Username</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Joined</th>
-                <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t('col_name')}</th>
+                <th className="px-6 py-4">{t('col_username')}</th>
+                <th className="px-6 py-4">{t('col_role')}</th>
+                <th className="px-6 py-4">{t('col_joined')}</th>
+                <th className="px-6 py-4 text-center">{t('col_status')}</th>
+                <th className="px-6 py-4 text-right">{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/15">
@@ -170,7 +172,7 @@ export default function Users() {
                     <span className="text-primary font-semibold">{user.fdNama}</span>
                     {user.fdId === currentUser?.id && (
                       <span className="bg-tertiary/10 text-tertiary px-2 py-0.5 rounded-full text-[0.72rem] font-bold tracking-wide font-mono uppercase">
-                        You
+                        {t('users_badge_you')}
                       </span>
                     )}
                   </td>
@@ -188,7 +190,7 @@ export default function Users() {
                     </select>
                   </td>
                   <td className="px-6 py-4 text-[0.9rem] text-secondary">
-                    {new Date(user.fdCreatedAt).toLocaleDateString('id-ID', {
+                    {new Date(user.fdCreatedAt).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
@@ -197,11 +199,11 @@ export default function Users() {
                   <td className="px-6 py-4 text-center">
                     {user.fdAktif ? (
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        <CheckSquare size={13} /> Active
+                        <CheckSquare size={13} /> {t('users_status_active')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                        <AlertTriangle size={13} /> Inactive
+                        <AlertTriangle size={13} /> {t('users_status_inactive')}
                       </span>
                     )}
                   </td>
@@ -215,7 +217,7 @@ export default function Users() {
                           : 'text-emerald-600 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 dark:text-emerald-400'
                       } disabled:opacity-30 disabled:cursor-not-allowed`}
                     >
-                      {user.fdAktif ? 'Deactivate' : 'Activate'}
+                      {user.fdAktif ? t('users_btn_deactivate') : t('users_btn_activate')}
                     </button>
                   </td>
                 </tr>
@@ -224,7 +226,7 @@ export default function Users() {
               {filteredUsers?.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-secondary">
-                    {searchQuery ? `No users found matching "${searchQuery}".` : 'No users registered in the database.'}
+                    {searchQuery ? t('users_empty_search', { query: searchQuery }) : t('users_empty')}
                   </td>
                 </tr>
               )}

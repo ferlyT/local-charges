@@ -21,30 +21,151 @@ const createInspectionReportSchema = z.object({
   fdMarkingCode: z.string().optional().default(''),
   fdMarkingNo: z.string().optional().default(''),
   fdNamaCustomer: z.string().min(1, 'Customer Name is required'),
+  fdTerima: z.string().nullable().optional(),
   fdKeterangan: z.string().optional().default(''),
   fdStatus: z.string().optional().default('1'),
 });
 
-// GET /lookup - Lookup entry list data
-inspectionReportRoutes.get('/lookup', requirePermission('inspection_reports:read'), async (c) => {
-  const search = c.req.query('search') || '';
+// GET /stats - Dashboard statistics
+inspectionReportRoutes.get('/stats', requirePermission('inspection_reports:read'), async (c) => {
   try {
-    const results = await prisma.vwtbEntryListCustomer.findMany({
-      where: search ? {
-        OR: [
-          { fdMarkingCode: { startsWith: search } },
-          { fdMarkingNo: { startsWith: search } },
-          { fdCustName: { contains: search } },
-        ],
-      } : undefined,
-      take: 25
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    const [totalReports, totalThisMonth, totalLastMonth, statusGroups] = await Promise.all([
+      prisma.tbInspectionReport.count({ where: { fdDeletedAt: null } }),
+      prisma.tbInspectionReport.count({ where: { fdDeletedAt: null, fdCreatedAt: { gte: startOfThisMonth } } }),
+      prisma.tbInspectionReport.count({ where: { fdDeletedAt: null, fdCreatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+      prisma.tbInspectionReport.groupBy({
+        by: ['fdStatus'],
+        where: { fdDeletedAt: null },
+        _count: { fdId: true }
+      })
+    ]);
+
+    let growthPercent = 0;
+    if (totalLastMonth > 0) {
+      growthPercent = ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100;
+    } else if (totalThisMonth > 0) {
+      growthPercent = 100;
+    }
+
+    // Top 5 customers
+    const topCustomers = await prisma.tbInspectionReport.groupBy({
+      by: ['fdNamaCustomer'],
+      where: {
+        fdNamaCustomer: { not: '' },
+        fdDeletedAt: null
+      },
+      _count: { fdId: true },
+      orderBy: { _count: { fdId: 'desc' } },
+      take: 5,
     });
-    return c.json(results);
+
+    // Monthly trend: last 6 months
+    const monthlyTrend = await prisma.$queryRaw<{ month: string; count: bigint }[]>(Prisma.sql`
+      SELECT 
+        FORMAT(fdCreatedAt, 'yyyy-MM') AS month,
+        COUNT(*) AS count
+      FROM tbInspectionReport
+      WHERE fdDeletedAt IS NULL
+        AND fdCreatedAt >= DATEADD(MONTH, -5, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+      GROUP BY FORMAT(fdCreatedAt, 'yyyy-MM')
+      ORDER BY month ASC
+    `);
+
+    const statusMap: Record<string, string> = { '1': 'Draft', '2': 'Done' };
+    const byStatus = statusGroups.reduce((acc, curr) => {
+      const statusName = statusMap[curr.fdStatus.toString()] || `Status ${curr.fdStatus}`;
+      acc[statusName] = curr._count.fdId;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return c.json({
+      totalForms: totalReports,
+      totalThisMonth,
+      totalLastMonth,
+      growthPercent: Math.round(growthPercent),
+      byStatus,
+      topCustomers: topCustomers.map(c => ({
+        name: c.fdNamaCustomer,
+        count: c._count.fdId,
+      })),
+      monthlyTrend: monthlyTrend.map(r => ({
+        month: r.month,
+        count: Number(r.count),
+      })),
+    });
   } catch (error) {
-    logger.error('Error looking up marking code:', error);
-    return c.json({ message: 'Failed to lookup marking code' }, 500);
+    logger.error('Error fetching inspection report stats:', error);
+    return c.json({ message: 'Failed to fetch stats' }, 500);
   }
 });
+
+// // GET /lookup - Lookup entry list data
+// inspectionReportRoutes.get('/lookup', requirePermission('inspection_reports:read'), async (c) => {
+//   const search = c.req.query('search') || '';
+//   try {
+//     const results = await prisma.vwtbEntryListCustomer.findMany({
+//       where: search ? {
+//         OR: [
+//           { fdMarkingCode: { startsWith: search } },
+//           { fdMarkingNo: { startsWith: search } },
+//           { fdCustName: { contains: search } },
+//         ],
+//       } : undefined,
+//       take: 25
+//     });
+//     return c.json(results);
+//   } catch (error) {
+//     logger.error('Error looking up marking code:', error);
+//     return c.json({ message: 'Failed to lookup marking code' }, 500);
+//   }
+// });
+
+// GET /lookup - Lookup entry list data
+inspectionReportRoutes.get(
+  '/lookup',
+  requirePermission('inspection_reports:read'),
+  async (c) => {
+    const search = c.req.query('search')?.trim() ?? '';
+    const page = Number(c.req.query('page')) || 1;
+    const limit = Number(c.req.query('limit')) || 20;
+
+    try {
+      const results = await prisma.vwtbEntryListCustomer.findMany({
+        where: search
+          ? {
+              OR: [
+                { fdCustName: { contains: search } },
+                { fdMarkingCode: { startsWith: search } },
+                { fdMarkingNo: { startsWith: search } },
+              ]
+            }
+          : undefined,
+        orderBy: [
+          { fdCustName: 'asc' },
+          { fdMarkingCode: 'asc' },
+          { fdMarkingNo: 'asc' },
+          { fdTerima: 'asc' },
+          { fdListCode: 'asc' },
+        ],
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      return c.json(results);
+    } catch (error) {
+      logger.error('Error looking up marking code:', error);
+      return c.json(
+        { message: 'Failed to lookup marking code' },
+        500
+      );
+    }
+  }
+);
 
 // GET list with pagination and search
 inspectionReportRoutes.get('/', requirePermission('inspection_reports:read'), async (c) => {
@@ -184,6 +305,7 @@ inspectionReportRoutes.post('/', requirePermission('inspection_reports:create'),
         fdMarkingCode: body.fdMarkingCode,
         fdMarkingNo: body.fdMarkingNo,
         fdNamaCustomer: body.fdNamaCustomer,
+        fdTerima: body.fdTerima,
         fdKeterangan: body.fdKeterangan,
         fdStatus: body.fdStatus || '1',
         fdCreatedBy: parseInt(jwtPayload.sub),
@@ -211,6 +333,7 @@ inspectionReportRoutes.put('/:id', requirePermission('inspection_reports:edit'),
         fdMarkingCode: body.fdMarkingCode,
         fdMarkingNo: body.fdMarkingNo,
         fdNamaCustomer: body.fdNamaCustomer,
+        fdTerima: body.fdTerima,
         fdKeterangan: body.fdKeterangan,
         fdStatus: body.fdStatus || '1',
         fdUpdatedAt: new Date(),

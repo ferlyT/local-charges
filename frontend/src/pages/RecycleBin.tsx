@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 import { Trash2, RefreshCw, FileX } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface TrashItem {
   fdId: number;
@@ -20,6 +21,7 @@ export default function RecycleBin() {
   const [page, setPage] = useState(1);
   const limit = 20;
   const queryClient = useQueryClient();
+  const { t, language } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<TabType>('local-charges');
   
@@ -40,13 +42,13 @@ export default function RecycleBin() {
       await api.patch(endpoint);
     },
     onSuccess: () => {
-      toast.success('Form restored successfully');
+      toast.success(t('rb_toast_restore_success'));
       queryClient.invalidateQueries({ queryKey: ['trash'] });
       queryClient.invalidateQueries({ queryKey: ['localCharges'] });
       queryClient.invalidateQueries({ queryKey: ['inspectionReports'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to restore form');
+      toast.error(err.response?.data?.message || t('rb_toast_restore_err'));
     }
   });
 
@@ -56,22 +58,22 @@ export default function RecycleBin() {
       await api.delete(endpoint);
     },
     onSuccess: () => {
-      toast.success('Form permanently deleted');
+      toast.success(t('rb_toast_del_success'));
       queryClient.invalidateQueries({ queryKey: ['trash'] });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to permanently delete form');
+      toast.error(err.response?.data?.message || t('rb_toast_del_err'));
     }
   });
 
   const handleRestore = (id: number) => {
-    if (confirm('Are you sure you want to restore this form? It will appear back in the dashboard.')) {
+    if (confirm(t('rb_confirm_restore'))) {
       restoreMutation.mutate(id);
     }
   };
 
   const handlePermanentDelete = (id: number) => {
-    if (confirm('WARNING: Are you absolutely sure? This will permanently delete the form, all its items, and physical attachment files. This action CANNOT be undone!')) {
+    if (confirm(t('rb_confirm_del'))) {
       permanentDeleteMutation.mutate(id);
     }
   };
@@ -88,10 +90,10 @@ export default function RecycleBin() {
         <div>
           <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.02em] leading-none mb-2 flex items-center gap-3">
             <Trash2 className="text-rose-500" size={32} />
-            Recycle Bin
+            {t('rb_title')}
           </h1>
           <p className="text-[0.95rem] text-secondary">
-            Manage soft-deleted forms. Restore them to the dashboard or permanently delete them.
+            {t('rb_subtitle')}
           </p>
         </div>
       </div>
@@ -105,7 +107,7 @@ export default function RecycleBin() {
               : 'border-transparent text-secondary hover:text-primary'
           }`}
         >
-          Local Charges
+          {t('rb_tab_lc')}
         </button>
         <button
           onClick={() => handleTabChange('inspection-reports')}
@@ -115,7 +117,7 @@ export default function RecycleBin() {
               : 'border-transparent text-secondary hover:text-primary'
           }`}
         >
-          Inspection Reports
+          {t('rb_tab_ir')}
         </button>
       </div>
 
@@ -124,21 +126,21 @@ export default function RecycleBin() {
           <table className="min-w-full divide-y divide-secondary/20">
             <thead className="bg-neutral/50">
               <tr>
-                <th className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">No. Form</th>
-                <th className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">Customer</th>
-                <th className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">Deleted Date</th>
-                <th className="px-6 py-4 text-right text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">Actions</th>
+                <th className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">{t('col_form_no')}</th>
+                <th className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">{t('col_customer')}</th>
+                <th className="px-6 py-4 text-left text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">{t('col_deleted_date')}</th>
+                <th className="px-6 py-4 text-right text-[0.72rem] tracking-[0.06em] font-semibold text-secondary uppercase">{t('col_actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/15">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-secondary">Loading...</td>
+                  <td colSpan={4} className="px-6 py-12 text-center text-secondary">{t('state_loading')}</td>
                 </tr>
               ) : isError ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-rose-500 font-medium">
-                    Failed to fetch recycle bin data.
+                    {t('rb_err_fetch')}
                   </td>
                 </tr>
               ) : data?.data.length === 0 ? (
@@ -146,8 +148,8 @@ export default function RecycleBin() {
                   <td colSpan={4} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <FileX className="w-12 h-12 text-secondary/50 mb-3" />
-                      <h3 className="text-lg font-semibold text-primary mb-1">Recycle Bin is Empty</h3>
-                      <p className="text-secondary text-sm">No deleted forms found.</p>
+                      <h3 className="text-lg font-semibold text-primary mb-1">{t('rb_empty_title')}</h3>
+                      <p className="text-secondary text-sm">{t('rb_empty_desc')}</p>
                     </div>
                   </td>
                 </tr>
@@ -163,7 +165,7 @@ export default function RecycleBin() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-[0.9rem] text-secondary">
-                      {new Date(item.fdDeletedAt).toLocaleString('id-ID')}
+                      {new Date(item.fdDeletedAt).toLocaleString(language === 'id' ? 'id-ID' : 'en-US')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -172,14 +174,14 @@ export default function RecycleBin() {
                           disabled={restoreMutation.isPending || permanentDeleteMutation.isPending}
                           className="p-1.5 text-emerald-600 hover:bg-emerald-500/10 rounded-md transition-colors flex items-center gap-1.5 text-sm font-medium"
                         >
-                          <RefreshCw size={16} /> Restore
+                          <RefreshCw size={16} /> {t('rb_restore_btn')}
                         </button>
                         <button
                           onClick={() => handlePermanentDelete(item.fdId)}
                           disabled={restoreMutation.isPending || permanentDeleteMutation.isPending}
                           className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-md transition-colors flex items-center gap-1.5 text-sm font-medium"
                         >
-                          <Trash2 size={16} /> Hard Delete
+                          <Trash2 size={16} /> {t('rb_delete_btn')}
                         </button>
                       </div>
                     </td>
@@ -194,7 +196,7 @@ export default function RecycleBin() {
           <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-t border-secondary/20">
             <div>
               <p className="text-[0.9rem] text-secondary">
-                Showing <span className="font-semibold text-primary">{(page - 1) * limit + 1}</span> to <span className="font-semibold text-primary">{Math.min(page * limit, data.meta.total)}</span> of <span className="font-semibold text-primary">{data.meta.total}</span> records
+                {t('pagination_showing', { from: (page - 1) * limit + 1, to: Math.min(page * limit, data.meta.total), total: data.meta.total })}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -203,17 +205,17 @@ export default function RecycleBin() {
                 disabled={page === 1}
                 className="btn-secondary px-3.5 py-2 text-sm disabled:opacity-30"
               >
-                Previous
+                {t('pagination_prev')}
               </button>
               <div className="font-mono text-sm px-3 text-secondary">
-                Page <span className="font-semibold text-primary">{page}</span> of <span className="font-semibold text-primary">{data.meta.totalPages}</span>
+                {t('pagination_page', { page, total: data.meta.totalPages })}
               </div>
               <button
                 onClick={() => setPage(p => Math.min(data.meta.totalPages, p + 1))}
                 disabled={page >= data.meta.totalPages}
                 className="btn-secondary px-3.5 py-2 text-sm disabled:opacity-30"
               >
-                Next
+                {t('pagination_next')}
               </button>
             </div>
           </div>

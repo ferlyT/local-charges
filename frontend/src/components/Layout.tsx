@@ -3,6 +3,8 @@ import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { LogOut, LayoutDashboard, FileText, ChevronLeft, ChevronRight, Users, UserCircle, Shield, Trash2, ClipboardList } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import LanguageToggle from './LanguageToggle';
+import { useTranslation } from '../hooks/useTranslation';
 import { hasPermission } from '../lib/permissions';
 import { resolveAvatarUrl } from '../lib/constants';
 
@@ -12,6 +14,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { t } = useTranslation();
 
   const handleLogout = () => {
     logout();
@@ -19,22 +22,22 @@ export default function Layout() {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: t('nav_dashboard'), path: '/', icon: LayoutDashboard },
     ...((hasPermission(user, 'local_charges:create')) ? [
-      { name: 'Local Charge', path: '/new', icon: FileText },
+      { name: t('nav_local_charges'), path: '/local-charges', icon: FileText },
     ] : []),
     ...((hasPermission(user, 'inspection_reports:read')) ? [
-      { name: 'Inspection Reports', path: '/inspection-reports', icon: ClipboardList },
+      { name: t('nav_inspection_reports'), path: '/inspection-reports', icon: ClipboardList },
     ] : []),
     ...((hasPermission(user, 'local_charges:delete')) ? [
-      { name: 'Recycle Bin', path: '/recycle-bin', icon: Trash2 },
+      { name: t('nav_recycle_bin'), path: '/recycle-bin', icon: Trash2 },
     ] : []),
-    { name: 'My Profile', path: '/profile', icon: UserCircle },
+    { name: t('nav_my_profile'), path: '/profile', icon: UserCircle },
     ...((hasPermission(user, 'users:manage')) ? [
-      { name: 'Manage Users', path: '/users', icon: Users }
+      { name: t('nav_manage_users'), path: '/users', icon: Users }
     ] : []),
     ...((hasPermission(user, 'roles:manage')) ? [
-      { name: 'Manage Roles', path: '/roles', icon: Shield }
+      { name: t('nav_manage_roles'), path: '/roles', icon: Shield }
     ] : []),
   ];
 
@@ -46,11 +49,12 @@ export default function Layout() {
           WorkHub
         </h1>
         <div className="flex items-center gap-4">
+          <LanguageToggle />
           <ThemeToggle />
           <button 
             onClick={handleLogout}
             className="text-secondary hover:text-tertiary transition-colors p-1.5 rounded-md hover:bg-secondary/10"
-            title="Logout"
+            title={t('nav_logout')}
           >
             <LogOut size={20} />
           </button>
@@ -102,7 +106,8 @@ export default function Layout() {
 
         <div className={`p-4 border-t border-secondary/20 bg-neutral/30 transition-all ${!isSidebarOpen && 'flex flex-col items-center'}`}>
           {isSidebarOpen && (
-            <div className="mb-4 flex justify-center w-full">
+            <div className="mb-4 flex justify-center w-full gap-2">
+              <LanguageToggle />
               <ThemeToggle />
             </div>
           )}
@@ -138,7 +143,7 @@ export default function Layout() {
             <button 
               onClick={handleLogout}
               className={`text-secondary hover:text-tertiary transition-colors p-2 rounded-md hover:bg-secondary/10 ${!isSidebarOpen && 'w-full flex justify-center mb-1'}`}
-              title="Logout"
+              title={t('nav_logout')}
             >
               <LogOut size={18} />
             </button>

@@ -217,28 +217,28 @@ export default function AnalyticsSection({ stats, isLoading }: {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Form"
-          value={stats.totalForms.toLocaleString()}
+          value={(stats.totalForms || 0).toLocaleString()}
           icon={FileText}
           accent="bg-tertiary/10 text-tertiary"
         />
         <StatCard
           label="Bulan Ini"
-          value={stats.totalThisMonth.toLocaleString()}
+          value={(stats.totalThisMonth || 0).toLocaleString()}
           icon={BarChart2}
           accent="bg-blue-500/10 text-blue-500"
-          sub={`vs ${stats.totalLastMonth} bulan lalu`}
-          trend={{ value: stats.growthPercent, label: 'vs last month' }}
+          sub={`vs ${stats.totalLastMonth || 0} bulan lalu`}
+          trend={{ value: stats.growthPercent || 0, label: 'vs last month' }}
         />
         <StatCard
           label="Draft"
-          value={draftCount.toLocaleString()}
+          value={(draftCount || 0).toLocaleString()}
           icon={Clock}
           accent="bg-amber-400/10 text-amber-500"
           sub="Belum selesai"
         />
         <StatCard
           label="Done"
-          value={doneCount.toLocaleString()}
+          value={(doneCount || 0).toLocaleString()}
           icon={CheckCircle2}
           accent="bg-emerald-500/10 text-emerald-500"
           sub="Sudah selesai"

@@ -28,7 +28,7 @@ export default function Register() {
     try {
       await api.post('/auth/register', { nama, username, password });
       toast.success('Registration successful! Please wait for admin approval to sign in.');
-      navigate('/login');
+      setTimeout(() => navigate('/login'), 1000);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Registration failed.');
     } finally {

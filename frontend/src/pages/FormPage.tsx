@@ -132,7 +132,7 @@ export default function FormPage() {
       if (isEdit) {
         await api.put(`/local-charges/${id}`, payload);
         toast.success('Berhasil menyimpan perubahan!');
-        navigate('/');
+        setTimeout(() => navigate('/'), 1000);
       } else {
         const res = await api.post('/local-charges', payload);
         toast.success('Form berhasil dibuat! Silakan upload lampiran.');
@@ -162,7 +162,7 @@ export default function FormPage() {
     try {
       await api.delete(`/local-charges/${id}`);
       toast.success('Form berhasil dihapus');
-      navigate('/');
+      setTimeout(() => navigate('/'), 1000);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal menghapus form');
       setIsSaving(false);

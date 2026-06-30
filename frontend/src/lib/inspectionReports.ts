@@ -8,6 +8,7 @@ export interface InspectionReport {
   fdMarkingCode: string;
   fdMarkingNo: string;
   fdNamaCustomer: string;
+  fdTerima?: string | null;
   fdKeterangan: string;
   fdStatus: string;
   fdCreatedAt: string;

@@ -7,13 +7,17 @@ interface UseAutocompleteOptions<T> {
   value: string;
   onChange: (val: string) => void;
   debounceMs?: number;
+  isPaginated?: boolean;
 }
 
-export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300 }: UseAutocompleteOptions<T>) {
+export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300, isPaginated = false }: UseAutocompleteOptions<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(value || '');
   const [options, setOptions] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   const debouncedSearch = useDebounce(search, debounceMs);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -23,22 +27,53 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
   }, [value]);
 
   useEffect(() => {
+    // Reset pagination when search changes
+    setPage(1);
+    setHasMore(true);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
     const fetchOptions = async () => {
-      setIsLoading(true);
+      // If not paginated or first page, show main loader
+      if (!isPaginated || page === 1) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      
       try {
-        const response = await api.get(`${endpoint}?search=${encodeURIComponent(debouncedSearch)}`);
-        setOptions(response.data);
+        let url = `${endpoint}?search=${encodeURIComponent(debouncedSearch)}`;
+        if (isPaginated) {
+          url += `&page=${page}&limit=20`;
+        }
+        
+        const response = await api.get(url);
+        
+        if (isPaginated) {
+          if (page === 1) {
+            setOptions(response.data);
+          } else {
+            setOptions(prev => [...prev, ...response.data]);
+          }
+          // If returned data length is less than limit, no more data
+          if (response.data.length < 20) {
+            setHasMore(false);
+          }
+        } else {
+          setOptions(response.data);
+        }
       } catch (error) {
         console.error(`Failed to fetch autocomplete options for ${endpoint}:`, error);
       } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     };
 
     if (isOpen) {
       fetchOptions();
     }
-  }, [debouncedSearch, isOpen, endpoint]);
+  }, [debouncedSearch, isOpen, endpoint, page, isPaginated]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,6 +98,12 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
     setIsOpen(false);
   };
 
+  const loadMore = () => {
+    if (isPaginated && hasMore && !isLoading && !isLoadingMore) {
+      setPage(prev => prev + 1);
+    }
+  };
+
   return {
     isOpen,
     setIsOpen,
@@ -70,8 +111,11 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
     setSearch,
     options,
     isLoading,
+    isLoadingMore,
+    hasMore,
     wrapperRef,
     handleChange,
     handleSelect,
+    loadMore
   };
 }

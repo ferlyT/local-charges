@@ -4,6 +4,7 @@ import { User as UserIcon, Lock, Save, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { resolveAvatarUrl } from '../lib/constants';
+import { useTranslation } from '../hooks/useTranslation';
 
 export default function ProfilePage() {
   const { user, setAuth, token } = useAuthStore();
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,9 +26,9 @@ export default function ProfilePage() {
     try {
       const res = await api.put('/auth/profile', { nama, avatar: avatar || null });
       setAuth(res.data.user, token!);
-      toast.success('Profile updated successfully');
+      toast.success(t('profile_toast_update_success'));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      toast.error(error.response?.data?.message || t('profile_toast_update_err'));
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -35,19 +37,19 @@ export default function ProfilePage() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast.error('New passwords do not match');
+      toast.error(t('profile_err_pass_match'));
       return;
     }
     
     setIsUpdatingPassword(true);
     try {
       await api.put('/auth/password', { currentPassword, newPassword });
-      toast.success('Password updated successfully');
+      toast.success(t('profile_toast_pass_success'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update password');
+      toast.error(error.response?.data?.message || t('profile_toast_pass_err'));
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -58,7 +60,7 @@ export default function ProfilePage() {
     if (!file) return;
     
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size should not exceed 5MB');
+      toast.error(t('profile_err_file_size'));
       return;
     }
 
@@ -66,16 +68,16 @@ export default function ProfilePage() {
     formData.append('file', file);
     
     setIsUploadingAvatar(true);
-    const loadingToast = toast.loading('Uploading avatar...');
+    const loadingToast = toast.loading(t('profile_toast_upload_loading'));
     try {
       const res = await api.post('/lampiran/avatar', formData);
       // Save only the relative path (e.g. "/api/v1/lampiran/download/avatars/xxx.jpg")
       // resolveAvatarUrl will convert it to the correct full URL at render time
       setAvatar(res.data.url);
-      toast.success('Avatar uploaded! Click Save to apply.', { id: loadingToast });
+      toast.success(t('profile_toast_upload_success'), { id: loadingToast });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.message || 'Failed to upload avatar', { id: loadingToast });
+      toast.error(err.response?.data?.message || t('profile_toast_upload_err'), { id: loadingToast });
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -90,10 +92,10 @@ export default function ProfilePage() {
         </div>
         <div>
           <h1 className="text-[2.2rem] font-display text-primary tracking-[-0.015em] leading-none mb-1">
-            My Profile
+            {t('profile_title')}
           </h1>
           <p className="text-secondary text-sm">
-            Manage your personal information and security settings.
+            {t('profile_subtitle')}
           </p>
         </div>
       </div>
@@ -102,14 +104,14 @@ export default function ProfilePage() {
         {/* Profile Info */}
         <div className="bg-surface shadow-md border border-secondary/20 rounded-xl p-6">
           <h2 className="text-lg font-bold text-primary mb-6 flex items-center gap-2">
-            <UserIcon size={20} className="text-tertiary" /> Personal Information
+            <UserIcon size={20} className="text-tertiary" /> {t('profile_section_personal')}
           </h2>
           <form onSubmit={handleUpdateProfile} className="space-y-5">
             <div className="flex items-center gap-6 mb-6">
               <div 
                 className={`relative group cursor-pointer ${isUploadingAvatar ? 'opacity-50 pointer-events-none' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
-                title="Click to upload new avatar"
+                title={t('profile_tooltip_avatar')}
               >
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-neutral/50 border-4 border-surface shadow-sm group-hover:border-tertiary/30 transition-colors">
                   {avatar ? (
@@ -132,18 +134,18 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-secondary mb-1 uppercase font-semibold tracking-wider">Username</p>
+                <p className="text-xs text-secondary mb-1 uppercase font-semibold tracking-wider">{t('profile_lbl_username')}</p>
                 <p className="font-mono text-primary bg-secondary/5 px-3 py-1.5 rounded-md inline-block">@{user?.username}</p>
                 <div className="mt-2">
                   <span className="text-[0.7rem] bg-tertiary/10 text-tertiary px-2 py-0.5 rounded-full uppercase font-bold tracking-widest">
-                    Role: {user?.role}
+                    {t('profile_lbl_role')}: {user?.role}
                   </span>
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-secondary mb-1.5">Full Name</label>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">{t('profile_lbl_fullname')}</label>
               <input
                 type="text"
                 value={nama}
@@ -158,7 +160,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2 min-w-0">
                   <Camera size={15} className="text-tertiary flex-shrink-0" />
                   <span className="text-[0.82rem] text-secondary truncate font-mono">
-                    {avatar.startsWith('/api/') ? 'Uploaded photo' : avatar}
+                    {avatar.startsWith('/api/') ? t('profile_photo_uploaded') : avatar}
                   </span>
                 </div>
                 <button
@@ -166,7 +168,7 @@ export default function ProfilePage() {
                   onClick={() => setAvatar('')}
                   className="text-rose-500 hover:text-rose-600 text-[0.78rem] font-semibold flex-shrink-0 transition-colors"
                 >
-                  Remove
+                  {t('profile_btn_remove_photo')}
                 </button>
               </div>
             )}
@@ -177,7 +179,7 @@ export default function ProfilePage() {
               className="w-full bg-tertiary hover:bg-tertiary/90 text-white font-semibold py-2.5 rounded-lg shadow-md shadow-tertiary/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <Save size={18} />
-              {isUpdatingProfile ? 'Saving...' : 'Save Profile'}
+              {isUpdatingProfile ? t('profile_btn_save_saving') : t('profile_btn_save')}
             </button>
           </form>
         </div>
@@ -185,11 +187,11 @@ export default function ProfilePage() {
         {/* Password Update */}
         <div className="bg-surface shadow-md border border-secondary/20 rounded-xl p-6">
           <h2 className="text-lg font-bold text-primary mb-6 flex items-center gap-2">
-            <Lock size={20} className="text-tertiary" /> Change Password
+            <Lock size={20} className="text-tertiary" /> {t('profile_section_password')}
           </h2>
           <form onSubmit={handleUpdatePassword} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-secondary mb-1.5">Current Password</label>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">{t('profile_lbl_curr_pass')}</label>
               <input
                 type="password"
                 value={currentPassword}
@@ -200,7 +202,7 @@ export default function ProfilePage() {
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-secondary mb-1.5">New Password</label>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">{t('profile_lbl_new_pass')}</label>
               <input
                 type="password"
                 value={newPassword}
@@ -212,7 +214,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-secondary mb-1.5">Confirm New Password</label>
+              <label className="block text-sm font-semibold text-secondary mb-1.5">{t('profile_lbl_confirm_pass')}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -229,7 +231,7 @@ export default function ProfilePage() {
               className="w-full bg-neutral/50 border border-secondary/20 hover:bg-neutral/80 text-primary font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
             >
               <Lock size={18} />
-              {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+              {isUpdatingPassword ? t('profile_btn_pass_updating') : t('profile_btn_pass_update')}
             </button>
           </form>
         </div>
