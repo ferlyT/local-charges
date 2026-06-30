@@ -132,7 +132,6 @@ inspectionReportRoutes.get(
   async (c) => {
     const search = c.req.query('search')?.trim() ?? '';
     const markingCode = c.req.query('markingCode')?.trim() ?? '';
-    const custSearch = c.req.query('custSearch')?.trim() ?? '';
     const page = Number(c.req.query('page')) || 1;
     const limit = Number(c.req.query('limit')) || 20;
 
@@ -140,10 +139,10 @@ inspectionReportRoutes.get(
       let whereClause: any;
 
       if (markingCode) {
-        // Two-stage filter mode: markingCode is fixed, optionally filter by custSearch
+        // Two-stage filter mode: only filter by markingCode on backend
+        // custSearch filtering is handled client-side
         whereClause = {
           fdMarkingCode: { startsWith: markingCode },
-          ...(custSearch ? { fdCustName: { contains: custSearch } } : {}),
         };
       } else if (search) {
         // Standard OR search across all relevant fields

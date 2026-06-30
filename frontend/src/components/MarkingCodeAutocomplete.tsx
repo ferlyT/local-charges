@@ -69,7 +69,8 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
 
     const { markingPart, custPart, isTwoStage } = parseInput(upperVal);
     if (isTwoStage && markingPart) {
-      setExtraParams({ markingCode: markingPart, custSearch: custPart.trim() });
+      // Only send markingCode to backend; custSearch is filtered client-side
+      setExtraParams({ markingCode: markingPart });
       setFilterMode({ marking: markingPart, cust: custPart.trim() });
     } else {
       setExtraParams({});
@@ -86,6 +87,15 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
     setExtraParams({});
     setFilterMode(null);
   };
+
+  // Client-side filter when in two-stage mode
+  const custFilter = filterMode?.cust?.trim().toLowerCase() ?? '';
+  const displayedOptions = custFilter
+    ? options.filter(opt =>
+        (opt.fdCustName ?? '').toLowerCase().includes(custFilter) ||
+        (opt.fdMarkingNo ?? '').toLowerCase().includes(custFilter)
+      )
+    : options;
 
   return (
     <div ref={wrapperRef} className="relative w-full">
@@ -122,10 +132,10 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
 
           {isLoading ? (
             <div className="p-3 text-[0.95rem] text-secondary text-center">{t('state_loading')}</div>
-          ) : options.length > 0 ? (
+          ) : displayedOptions.length > 0 ? (
             <div className="flex flex-col">
               <ul className="py-1">
-                {options.map((opt, idx) => (
+                {displayedOptions.map((opt, idx) => (
                   <li
                     key={`${opt.fdListCode}-${idx}`}
                     onClick={() => handleSelectLocal(opt)}
