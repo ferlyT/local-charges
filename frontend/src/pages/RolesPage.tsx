@@ -324,7 +324,7 @@ export default function RolesPage() {
                     ))}
                   </div>
                   {editingRole?.fdNama === 'admin' && (
-                    <p className="text-xs text-secondary mt-2 italic bg-secondary/10 p-2 rounded-md">{t('roles_msg_admin_perm', 'Note: Admin role automatically bypasses all permission checks, but you can explicitly define permissions here.')}</p>
+                    <p className="text-xs text-secondary mt-2 italic bg-secondary/10 p-2 rounded-md">{t('roles_msg_admin_perm')}</p>
                   )}
                 </div>
               </form>

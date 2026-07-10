@@ -24,7 +24,7 @@ export async function ingestPriceListFile(
         create: parsed.items.map((it) => ({
           sheetType: it.sheetType,
           mode: it.mode,
-          destination: it.destination,
+          branch: it.branch,
           transitTime: it.transitTime,
           category: it.category,
           price: new Prisma.Decimal(it.price),
@@ -156,8 +156,8 @@ export async function getUploadDiff(id: number) {
   }
   const previous = previousRow ?? null;
 
-  const key = (it: { sheetType: string; mode: string; destination: string; category: string }) =>
-    `${it.sheetType}||${it.mode}||${it.destination}||${it.category}`;
+  const key = (it: { sheetType: string; mode: string; branch: string; category: string }) =>
+    `${it.sheetType}||${it.mode}||${it.branch}||${it.category}`;
 
   const prevMap = new Map<string, number>();
   previous?.items.forEach((it) => prevMap.set(key(it), Number(it.price)));
@@ -168,7 +168,7 @@ export async function getUploadDiff(id: number) {
     return {
       sheetType: it.sheetType,
       mode: it.mode,
-      destination: it.destination,
+      branch: it.branch,
       category: it.category,
       currentPrice: currPrice,
       previousPrice: prevPrice ?? null,
@@ -189,7 +189,7 @@ export async function getUploadDiff(id: number) {
 interface DashboardFilter {
   sheetType?: string;
   mode?: string;
-  destination?: string;
+  branch?: string;
   category?: string;
   from?: Date;
   to?: Date;
@@ -231,7 +231,7 @@ export async function getPriceTrend(filter: DashboardFilter) {
       uploadId: { in: activeUploadIds },
       ...(filter.sheetType && { sheetType: filter.sheetType }),
       ...(filter.mode && { mode: filter.mode }),
-      ...(filter.destination && { destination: filter.destination }),
+      ...(filter.branch && { branch: filter.branch }),
       ...(filter.category && { category: filter.category }),
     },
     include: {
@@ -245,7 +245,7 @@ export async function getPriceTrend(filter: DashboardFilter) {
     date: it.upload.effectiveDate.toISOString().slice(0, 10),
     sheetType: it.sheetType,
     mode: it.mode,
-    destination: it.destination,
+    branch: it.branch,
     category: it.category,
     price: Number(it.price),
   }));
@@ -253,16 +253,16 @@ export async function getPriceTrend(filter: DashboardFilter) {
 
 /** Daftar nilai distinct untuk mengisi dropdown filter di frontend. */
 export async function getFilterOptions() {
-  const [sheetTypes, modes, destinations, categories] = await Promise.all([
+  const [sheetTypes, modes, branches, categories] = await Promise.all([
     prisma.priceListItem.findMany({ distinct: ["sheetType"], select: { sheetType: true } }),
     prisma.priceListItem.findMany({ distinct: ["mode"], select: { mode: true } }),
-    prisma.priceListItem.findMany({ distinct: ["destination"], select: { destination: true } }),
+    prisma.priceListItem.findMany({ distinct: ["branch"], select: { branch: true } }),
     prisma.priceListItem.findMany({ distinct: ["category"], select: { category: true } }),
   ]);
   return {
     sheetTypes: sheetTypes.map((s) => s.sheetType),
     modes: modes.map((m) => m.mode),
-    destinations: destinations.map((d) => d.destination),
+    branches: branches.map((d) => d.branch),
     categories: categories.map((c) => c.category),
   };
 }

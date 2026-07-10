@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../lib/api";
+import { useTranslation } from "../../hooks/useTranslation";
 import { Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, ArrowLeft, Eye, Info } from "lucide-react";
 
 interface UploadResult {
@@ -33,6 +34,7 @@ function defaultEffectiveDate() {
 }
 
 export default function PriceListUploadPage() {
+  const { t } = useTranslation();
   const [dragging, setDragging]     = useState(false);
   const [file, setFile]             = useState<File | null>(null);
   const [effectiveDate, setEffectiveDate] = useState(defaultEffectiveDate());
@@ -79,15 +81,15 @@ export default function PriceListUploadPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-secondary/10">
         <div>
           <h1 className="text-[2.6rem] font-display text-primary tracking-[-0.02em] leading-none mb-2">
-            Upload Price List
+            {t('pl_upload_title')}
           </h1>
           <p className="text-[0.95rem] text-secondary">
-            Upload file Excel (.xlsx) — sistem akan otomatis membaca dan menyimpan semua data harga.
+            {t('pl_upload_subtitle')}
           </p>
         </div>
         <Link to="/pricelist/uploads" className="btn-secondary inline-flex items-center gap-2 shrink-0">
           <ArrowLeft size={16} />
-          Riwayat Upload
+          {t('pl_btn_history')}
         </Link>
       </div>
 
@@ -97,7 +99,7 @@ export default function PriceListUploadPage() {
         <div className="card p-5 border border-secondary/20 space-y-3">
           <div className="flex items-center gap-2">
             <label htmlFor="effectiveDate" className="text-[0.95rem] font-semibold text-primary">
-              Tanggal Berlaku
+              {t('pl_upload_effective_date')}
             </label>
             <span className="text-rose-500 text-sm font-bold">*</span>
           </div>
@@ -111,9 +113,7 @@ export default function PriceListUploadPage() {
           />
           <p className="text-[0.82rem] text-secondary flex items-start gap-1.5">
             <Info size={13} className="shrink-0 mt-0.5 text-tertiary" />
-            Harga dalam file ini berlaku mulai tanggal ini. Digunakan sebagai acuan timeline di Dashboard.
-            Jika ada upload lain dengan tanggal berlaku yang sama, kedua versi akan tersimpan dan sistem
-            menggunakan versi terbaru.
+            {t('pl_upload_effective_date_help')}
           </p>
         </div>
 
@@ -154,19 +154,27 @@ export default function PriceListUploadPage() {
                 <Upload size={32} className="text-secondary" />
               </div>
               <div>
-                <p className="text-primary font-medium mb-1">Tarik &amp; lepas file .xlsx di sini</p>
-                <p className="text-[0.85rem] text-secondary">atau klik tombol di bawah untuk memilih file</p>
-              </div>
-              <label className="btn-secondary cursor-pointer text-sm py-2 px-4 inline-flex items-center gap-2">
-                <FileSpreadsheet size={15} />
-                Pilih File
+                <p className="text-lg font-semibold text-primary mb-1">
+                  {t('pl_upload_drop_title')}
+                </p>
+                <p className="text-sm text-secondary mb-6">
+                  {t('pl_upload_drop_subtitle')}
+                </p>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => document.getElementById("file-upload")?.click()}
+                >
+                  {t('pl_upload_btn_select')}
+                </button>
                 <input
+                  id="file-upload"
                   type="file"
                   accept=".xlsx,.xls"
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFile(f); setResult(null); setError(null); } }}
                 />
-              </label>
+              </div>
             </div>
           )}
         </div>
@@ -176,26 +184,26 @@ export default function PriceListUploadPage() {
           <div className="flex items-center gap-3">
             {!result && (
               <button
-                onClick={handleUpload}
-                disabled={!canUpload}
-                className="btn-primary inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+                type="button"
+                onClick={() => setFile(null)}
+                className="btn-secondary py-2 text-sm"
               >
-                {uploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    <Upload size={16} />
-                    Upload &amp; Proses
-                  </>
-                )}
+                {t('pl_upload_btn_replace')}
               </button>
             )}
-            {!uploading && (
+            {!result && (
+              <button
+                type="submit"
+                onClick={handleUpload}
+                disabled={!canUpload || uploading}
+                className="btn-primary py-2 text-sm"
+              >
+                {uploading ? t('state_loading') : t('pl_upload_btn_submit')}
+              </button>
+            )}
+            {result && (
               <button onClick={reset} className="btn-secondary text-sm py-2 px-4">
-                {result ? "Upload Lagi" : "Batal"}
+                {result ? t('pl_upload_btn_again') : t('pl_upload_btn_cancel')}
               </button>
             )}
           </div>

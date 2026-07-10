@@ -100,7 +100,7 @@ function MonthlyTrendChart({ data }: { data: StatsData['monthlyTrend'] }) {
           <Tooltip 
             contentStyle={{ borderRadius: '8px', border: '1px solid rgba(120, 120, 120, 0.2)', backgroundColor: 'var(--color-surface)' }}
             itemStyle={{ fontWeight: 'bold' }}
-            formatter={(value: number) => [value, 'Form']}
+            formatter={(value: any) => [value, 'Form']}
           />
           <Area type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
         </AreaChart>

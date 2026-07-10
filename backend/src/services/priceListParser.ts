@@ -9,7 +9,7 @@ import ExcelJS from "exceljs";
  *     diawali "BY " (mis. "BY SEA*", "BY AIR*"). Kalau suatu saat nama blok
  *     berubah total (tidak diawali "BY "), parser akan menandainya sebagai
  *     warning, bukan error, dan tetap mencoba jalan.
- *   - Baris tepat di bawah baris mode = baris tujuan (destination), kolom
+ *   - Baris tepat di bawah baris mode = baris cabang (branch), kolom
  *     B dst berisi kode negara/kota (SG, HK, GZ, ...).
  *   - Baris berikutnya BOLEH berisi transit time (mengandung "±" atau
  *     "day"/"hari") — kalau terdeteksi, dipakai; kalau tidak, dilewati
@@ -28,7 +28,7 @@ import ExcelJS from "exceljs";
 export interface ParsedItem {
   sheetType: string;
   mode: string;
-  destination: string;
+  branch: string;
   transitTime: string | null;
   category: string;
   price: number;
@@ -137,13 +137,13 @@ export async function parsePriceListWorkbook(buffer: Buffer): Promise<ParseResul
         // kode tujuan (SG, HK, GZ, ...) ada di baris YANG SAMA dengan label mode,
         // di kolom B dst — bukan di baris berikutnya.
         const modeRow = worksheet.getRow(r);
-        const destinations: { col: number; code: string }[] = [];
+        const branches: { col: number; code: string }[] = [];
         for (let c = 2; c <= maxCol; c++) {
           const t = cellText(modeRow.getCell(c).value);
-          if (t) destinations.push({ col: c, code: t });
+          if (t) branches.push({ col: c, code: t });
         }
-        if (destinations.length === 0) {
-          warnings.push(`[${sheetType}] Blok "${mode}" di baris ${r}: tidak ada kode tujuan di baris yang sama, blok dilewati.`);
+        if (branches.length === 0) {
+          warnings.push(`[${sheetType}] Blok "${mode}" di baris ${r}: tidak ada kode cabang di baris yang sama, blok dilewati.`);
           r += 1;
           continue;
         }
@@ -156,9 +156,9 @@ export async function parsePriceListWorkbook(buffer: Buffer): Promise<ParseResul
           const candidateColA = cellText(candidate.getCell(1).value);
           const looksLikeTransitRow =
             !colAHasCategoryShape(candidateColA) &&
-            destinations.some((d) => TRANSIT_PATTERN.test(cellText(candidate.getCell(d.col).value)));
+            branches.some((d) => TRANSIT_PATTERN.test(cellText(candidate.getCell(d.col).value)));
           if (looksLikeTransitRow) {
-            for (const d of destinations) {
+            for (const d of branches) {
               const t = cellText(candidate.getCell(d.col).value);
               if (t) transitMap[d.col] = t;
             }
@@ -177,13 +177,17 @@ export async function parsePriceListWorkbook(buffer: Buffer): Promise<ParseResul
           const category = rowColA;
           const dataRow = worksheet.getRow(cur);
           let gotAny = false;
-          for (const d of destinations) {
+          for (const d of branches) {
             const price = cellNumber(dataRow.getCell(d.col).value);
-            if (price !== null) {
+            // Harga 0 di file sumber biasanya berarti "rute belum/tidak
+            // ditawarkan", bukan harga beneran Rp 0 — jadi dilewati supaya
+            // tidak mencemari trend/KPI dashboard (mis. "termurah" jadi
+            // selalu Rp 0 begitu ada satu rute yang belum tersedia).
+            if (price !== null && price !== 0) {
               items.push({
                 sheetType,
                 mode,
-                destination: d.code,
+                branch: d.code,
                 transitTime: transitMap[d.col] ?? null,
                 category,
                 price,

@@ -194,12 +194,12 @@ model PriceListItem {
 
   sheetType   String   @db.NVarChar(20)   
   mode        String   @db.NVarChar(20)   
-  destination String   @db.NVarChar(20)   
+  branch      String   @db.NVarChar(20)
   transitTime String?  @db.NVarChar(50)   
   category    String   @db.NVarChar(150)  
   price       Decimal  @db.Decimal(14, 2)
 
   @@index([uploadId])
-  @@index([sheetType, mode, destination, category])
+  @@index([sheetType, mode, branch, category])
   @@map("PriceListItem")
 }

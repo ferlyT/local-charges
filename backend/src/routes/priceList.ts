@@ -85,13 +85,13 @@ priceListRoutes.get("/filters", requirePermission("pricelist:read"), async (c) =
   return c.json(options);
 });
 
-// GET /api/pricelist/trend?sheetType=CS&mode=BY SEA&destination=SG&category=General Goods&from=2026-01-01&to=2026-12-31
+// GET /api/pricelist/trend?sheetType=CS&mode=BY SEA&branch=SG&category=General Goods&from=2026-01-01&to=2026-12-31
 priceListRoutes.get("/trend", requirePermission("pricelist:read"), async (c) => {
-  const { sheetType, mode, destination, category, from, to } = c.req.query();
+  const { sheetType, mode, branch, category, from, to } = c.req.query();
   const trend = await getPriceTrend({
     sheetType: sheetType || undefined,
     mode: mode || undefined,
-    destination: destination || undefined,
+    branch: branch || undefined,
     category: category || undefined,
     from: from ? new Date(from) : undefined,
     to: to ? new Date(to) : undefined,

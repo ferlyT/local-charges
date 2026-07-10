@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../lib/api";
+import { useTranslation } from "../../hooks/useTranslation";
 import { Upload, Eye, ArrowRight, History, AlertCircle, FileSpreadsheet } from "lucide-react";
 
 interface UploadRow {
@@ -32,6 +33,7 @@ const STATUS_LABEL: Record<UploadRow["status"], string> = {
 };
 
 export default function PriceListHistoryPage() {
+  const { t } = useTranslation();
   const [rows, setRows]       = useState<UploadRow[]>([]);
   const [page, setPage]       = useState(1);
   const [total, setTotal]     = useState(0);
@@ -61,23 +63,23 @@ export default function PriceListHistoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-secondary/10">
         <div>
           <h1 className="text-[2.6rem] font-display text-primary tracking-[-0.02em] leading-none mb-2">
-            Riwayat Upload
+            {t('pl_history_title')}
           </h1>
           <p className="text-[0.95rem] text-secondary">
-            {loading ? "Memuat data..." : `${total} upload price list tercatat`}
+            {loading ? t('state_loading') : t('pl_history_subtitle', { total })}
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Link to="/pricelist" className="btn-secondary inline-flex items-center gap-2">
             <History size={16} />
-            Dashboard
+            {t('nav_dashboard')}
           </Link>
           <Link
             to="/pricelist/upload"
             className="btn-primary inline-flex items-center gap-2 shadow-md hover:scale-[1.01] active:scale-[0.99]"
           >
             <Upload size={18} />
-            Upload Baru
+            {t('pl_btn_upload')}
           </Link>
         </div>
       </div>
@@ -135,12 +137,12 @@ export default function PriceListHistoryPage() {
                       <div className="w-16 h-16 bg-neutral rounded-full flex items-center justify-center mb-4 border border-secondary/20">
                         <FileSpreadsheet className="w-8 h-8 text-secondary" />
                       </div>
-                      <h3 className="text-lg font-semibold text-primary mb-1">Belum ada upload</h3>
+                      <h3 className="text-lg font-semibold text-primary mb-1">{t('pl_history_empty')}</h3>
                       <p className="text-secondary text-sm leading-relaxed mb-4">
-                        Upload file price list pertama Anda untuk mulai melacak timeline harga.
+                        {t('pl_history_empty_desc')}
                       </p>
                       <Link to="/pricelist/upload" className="btn-secondary py-2 px-4 text-sm inline-flex items-center gap-1.5">
-                        <Upload size={16} /> Upload Price List
+                        <Upload size={16} /> {t('pl_upload_title')}
                       </Link>
                     </div>
                   </td>

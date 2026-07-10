@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../../lib/api";
+import { useTranslation } from "../../hooks/useTranslation";
 import { ArrowLeft, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Filter } from "lucide-react";
 
 interface DiffRow {
   sheetType: string;
   mode: string;
-  destination: string;
+  branch: string;
   category: string;
   currentPrice: number;
   previousPrice: number | null;
@@ -27,6 +28,7 @@ function formatRupiah(v: number) {
 }
 
 export default function PriceListDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const uploadId = Number(id);
 
@@ -64,22 +66,22 @@ export default function PriceListDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-secondary/10">
         <div>
           <h1 className="text-[2.6rem] font-display text-primary tracking-[-0.02em] leading-none mb-2">
-            Detail Upload #{uploadId}
+            {t('pl_detail_title', { id: uploadId })}
           </h1>
           <p className="text-[0.95rem] text-secondary">
             {loading
-              ? "Memuat perbandingan harga..."
+              ? t('state_loading')
               : data
               ? (
                 <>
-                  Berlaku mulai{" "}
+                  {t('pl_detail_effective')} {" "}
                   <strong className="text-primary">
                     {new Date(data.currentEffectiveDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                   </strong>
                   {" — "}
                   {data.previousUploadId
-                    ? `Dibandingkan dengan upload berlaku ${new Date(data.previousEffectiveDate!).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`
-                    : "Upload pertama — tidak ada data sebelumnya untuk dibandingkan"}
+                    ? t('pl_detail_compared', { date: new Date(data.previousEffectiveDate!).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) })
+                    : t('pl_detail_first')}
                 </>
               )
               : null}
@@ -90,7 +92,7 @@ export default function PriceListDetailPage() {
           className="btn-secondary inline-flex items-center gap-2 shrink-0"
         >
           <ArrowLeft size={16} />
-          Kembali ke Riwayat
+          {t('pl_btn_history')}
         </Link>
       </div>
 
@@ -139,7 +141,7 @@ export default function PriceListDetailPage() {
           <table className="min-w-full divide-y divide-secondary/20">
             <thead className="bg-neutral/50">
               <tr>
-                {["Tipe", "Mode", "Tujuan", "Kategori Barang", "Harga Sebelumnya", "Harga Sekarang", "Perubahan"].map((h, i) => (
+                {["Tipe", "Mode", "Cabang", "Kategori Barang", "Harga Sebelumnya", "Harga Sekarang", "Perubahan"].map((h, i) => (
                   <th
                     key={h}
                     scope="col"
@@ -177,7 +179,7 @@ export default function PriceListDetailPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-[0.9rem] text-secondary">{r.mode}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="font-mono text-[0.85rem] font-semibold text-primary">{r.destination}</span>
+                      <span className="font-mono text-[0.85rem] font-semibold text-primary">{r.branch}</span>
                     </td>
                     <td className="px-6 py-4 text-[0.9rem] text-primary max-w-[220px] truncate">{r.category}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-[0.88rem] font-mono text-secondary/70">
