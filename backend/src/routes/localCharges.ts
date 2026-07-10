@@ -22,7 +22,7 @@ const detailSchema = z.object({
   fdNoReceipt: z.string().nullable().optional(),
   fdNoBilling: z.string().nullable().optional(),
   fdKeterangan: z.string().nullable().optional(),
-  fdNoInputan: z.string().nullable().optional(),
+  fdNoInputan: z.string().min(1, 'No. Inputan wajib diisi'),
 });
 
 // Helper function to validate fdNoInputan uniqueness
@@ -66,6 +66,9 @@ async function validateNoInputanUniqueness(details: any[], currentLocalChargesId
 const createLocalChargeSchema = z.object({
   fdQty: z.number().nullable().optional(),
   fdSatuanQty: z.string().nullable().optional(),
+  fdDirequest: z.string().nullable().optional(),
+  fdBilling: z.string().nullable().optional(),
+  fdAR: z.string().nullable().optional(),
   details: z.array(detailSchema).min(1),
 });
 
@@ -314,6 +317,9 @@ localChargesRoutes.post('/', requirePermission('local_charges:create'), zValidat
       fdQty: body.fdQty,
       fdSatuanQty: body.fdSatuanQty || 'M3',
       fdStatus: hasBilling ? 2 : 1,
+      fdDirequest: body.fdDirequest || null,
+      fdBilling: body.fdBilling || null,
+      fdAR: body.fdAR || null,
       user: {
         connect: { fdId: parseInt(jwtPayload.sub) }
       },
@@ -337,6 +343,18 @@ localChargesRoutes.put('/:id', requirePermission('local_charges:edit'), zValidat
   const id = Number(c.req.param('id'));
   const body = c.req.valid('json');
 
+  const existingCharge = await prisma.tbLocalCharges.findUnique({
+    where: { fdId: id }
+  });
+
+  if (!existingCharge) {
+    return c.json({ message: 'Form not found' }, 404);
+  }
+
+  if (existingCharge.fdStatus === 2) {
+    return c.json({ message: 'Form tidak bisa diubah karena status sudah Done' }, 403);
+  }
+
   const validationError = await validateNoInputanUniqueness(body.details, id);
   if (validationError) {
     return c.json({ message: validationError }, 400);
@@ -358,6 +376,9 @@ localChargesRoutes.put('/:id', requirePermission('local_charges:edit'), zValidat
         fdStatus: hasBilling ? 2 : 1,
         fdQty: body.fdQty,
         fdSatuanQty: body.fdSatuanQty,
+        fdDirequest: body.fdDirequest || null,
+        fdBilling: body.fdBilling || null,
+        fdAR: body.fdAR || null,
         fdUpdatedAt: new Date(),
         details: {
           create: body.details.map((detail, index) => ({
@@ -439,6 +460,65 @@ localChargesRoutes.delete('/:id/permanent', requirePermission('local_charges:del
   } catch (error) {
     logger.error('Error permanently deleting form:', error);
     return c.json({ message: 'Failed to permanently delete form' }, 500);
+  }
+});
+
+// POST /:id/pull-invoice - Query SEJDB2020 for invoice data matching fdNoInputan values
+localChargesRoutes.post('/:id/pull-invoice', requirePermission('local_charges:pull_invoice'), async (c) => {
+  const id = Number(c.req.param('id'));
+
+  try {
+    // Fetch the local charge with its details
+    const localCharge = await prisma.tbLocalCharges.findFirst({
+      where: { fdId: id, fdDeletedAt: null },
+      include: { details: true },
+    });
+
+    if (!localCharge) {
+      return c.json({ message: 'Form not found' }, 404);
+    }
+
+    const noInputanList = localCharge.details
+      .map((d) => d.fdNoInputan)
+      .filter((n) => n && n.trim() !== '');
+
+    if (noInputanList.length === 0) {
+      return c.json({ message: 'Tidak ada No. Inputan pada form ini.' }, 400);
+    }
+
+    // Query SEJDB2020 for invoice data matching fdNoInputan values
+    // Using the same cross-database query pattern as inputan.ts
+    const placeholders = noInputanList.map((_, i) => `@p${i}`).join(', ');
+    const paramValues = noInputanList.join("','");
+    const results: any[] = await prisma.$queryRawUnsafe(
+      `SELECT 
+        fdListCode,
+        fdMarkingNo,
+        fdMarkingCode,
+        fdCustName,
+        fdNoReceipt,
+        fdNoBilling,
+        fdTerima
+       FROM [SEJDB2020].[dbo].[vwtbEntryListCustomer]
+       WHERE fdListCode IN ('${noInputanList.map(n => n.replace(/'/g, "''")).join("','")}')`,
+    );
+
+    // If invoice data found, elevate status to Done (2)
+    if (results.length > 0 && localCharge.fdStatus < 2) {
+      await prisma.tbLocalCharges.update({
+        where: { fdId: id },
+        data: { fdStatus: 2, fdUpdatedAt: new Date() },
+      });
+    }
+
+    return c.json({
+      found: results.length > 0,
+      statusUpdated: results.length > 0 && localCharge.fdStatus < 2,
+      results,
+    });
+  } catch (error) {
+    logger.error('Error pulling invoice:', error);
+    return c.json({ message: 'Gagal menarik data invoice' }, 500);
   }
 });
 

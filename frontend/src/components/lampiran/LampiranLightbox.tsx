@@ -24,8 +24,8 @@ export default function LampiranLightbox({ items, initialIndex, onClose }: Lampi
   const [rotation, setRotation] = useState(0);
 
   const currentItem = items[currentIndex];
-  const isImage = currentItem?.fdMimeType.startsWith('image/');
-  const isPdf = currentItem?.fdMimeType === 'application/pdf';
+  const isImage = currentItem?.fdMimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(currentItem?.fdFileName || '');
+  const isPdf = currentItem?.fdMimeType === 'application/pdf' || /\.(pdf)$/i.test(currentItem?.fdFileName || '');
 
   useEffect(() => {
     if (!currentItem) return;

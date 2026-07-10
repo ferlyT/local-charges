@@ -1,0 +1,37 @@
+// ============================================================
+// PRICE LIST MODULE — tambahkan model ini ke schema.prisma WorkHub
+// yang sudah ada, lalu jalankan: npx prisma migrate dev --name add_price_list
+// ============================================================
+
+model PriceListUpload {
+  id           Int      @id @default(autoincrement())
+  fileName     String   @db.NVarChar(255)
+  uploadedBy   String?  @db.NVarChar(100)   // ganti sesuai field user id/username di auth WorkHub
+  uploadedAt   DateTime @default(now())
+  priceDate    DateTime?                    // tanggal yang terbaca dari judul sheet, mis. "Price List 2026.01.25"
+  status       String   @default("PARSED") @db.NVarChar(20) // PARSED | PARTIAL | FAILED
+  warnings     String?  @db.NVarChar(Max)   // JSON array of warning strings dari parser
+  rawSnapshot  String?  @db.NVarChar(Max)   // JSON mentah seluruh sheet, untuk audit/fallback kalau parsing meleset
+  items        PriceListItem[]
+
+  @@index([uploadedAt])
+  @@index([priceDate])
+  @@map("PriceListUpload")
+}
+
+model PriceListItem {
+  id          Int      @id @default(autoincrement())
+  uploadId    Int
+  upload      PriceListUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  sheetType   String   @db.NVarChar(20)   // nama sheet apa adanya, mis. "CS", "MKT"
+  mode        String   @db.NVarChar(20)   // nama section apa adanya, mis. "BY SEA", "BY AIR"
+  destination String   @db.NVarChar(20)   // mis. "SG", "HK", "GZ", ...
+  transitTime String?  @db.NVarChar(50)   // mis. "± 14-20 Days"
+  category    String   @db.NVarChar(150)  // mis. "General Goods", "Lartas Normal", ...
+  price       Decimal  @db.Decimal(14, 2)
+
+  @@index([uploadId])
+  @@index([sheetType, mode, destination, category])
+  @@map("PriceListItem")
+}

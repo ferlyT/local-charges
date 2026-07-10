@@ -21,6 +21,7 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   const debouncedSearch = useDebounce(search, debounceMs);
+  const debouncedExtraParamsStr = useDebounce(JSON.stringify(extraParams), debounceMs);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,10 +29,10 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
   }, [value]);
 
   useEffect(() => {
-    // Reset pagination when search changes
+    // Reset pagination when search or extra params changes
     setPage(1);
     setHasMore(true);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, debouncedExtraParamsStr]);
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -47,10 +48,12 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
         if (isPaginated) {
           url += `&page=${page}&limit=20`;
         }
+        
         // Append any extra params (e.g. markingCode, custSearch)
-        Object.entries(extraParams).forEach(([key, val]) => {
+        const paramsObj = JSON.parse(debouncedExtraParamsStr);
+        Object.entries(paramsObj).forEach(([key, val]) => {
           if (val !== undefined && val !== '') {
-            url += `&${encodeURIComponent(key)}=${encodeURIComponent(val)}`;
+            url += `&${encodeURIComponent(key)}=${encodeURIComponent(val as string)}`;
           }
         });
         
@@ -80,7 +83,7 @@ export function useAutocomplete<T>({ endpoint, value, onChange, debounceMs = 300
     if (isOpen) {
       fetchOptions();
     }
-  }, [debouncedSearch, isOpen, endpoint, page, isPaginated, JSON.stringify(extraParams)]);
+  }, [debouncedSearch, isOpen, endpoint, page, isPaginated, debouncedExtraParamsStr]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

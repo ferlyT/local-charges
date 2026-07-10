@@ -16,6 +16,10 @@ import RolesPage from './pages/RolesPage';
 import RecycleBin from './pages/RecycleBin';
 import InspectionReportsPage from './pages/InspectionReportsPage';
 import InspectionReportFormPage from './pages/InspectionReportFormPage';
+import PriceListDashboardPage from './pages/PriceList/PriceListDashboardPage';
+import PriceListHistoryPage from './pages/PriceList/PriceListHistoryPage';
+import PriceListUploadPage from './pages/PriceList/PriceListUploadPage';
+import PriceListDetailPage from './pages/PriceList/PriceListDetailPage';
 import { hasPermission } from './lib/permissions';
 
 const queryClient = new QueryClient();
@@ -101,6 +105,11 @@ function App() {
             <Route path="inspection-reports" element={<PermissionRoute permission="local_charges:create"><InspectionReportsPage /></PermissionRoute>} />
             <Route path="inspection-reports/new" element={<PermissionRoute permission="local_charges:create"><InspectionReportFormPage /></PermissionRoute>} />
             <Route path="inspection-reports/:id" element={<PermissionRoute permission="local_charges:create"><InspectionReportFormPage /></PermissionRoute>} />
+            <Route path="pricelist" element={<PermissionRoute permission="pricelist:read"><PriceListDashboardPage /></PermissionRoute>} />
+            <Route path="pricelist/dashboard" element={<PermissionRoute permission="pricelist:read"><PriceListDashboardPage /></PermissionRoute>} />
+            <Route path="pricelist/uploads" element={<PermissionRoute permission="pricelist:read"><PriceListHistoryPage /></PermissionRoute>} />
+            <Route path="pricelist/uploads/:id" element={<PermissionRoute permission="pricelist:read"><PriceListDetailPage /></PermissionRoute>} />
+            <Route path="pricelist/upload" element={<PermissionRoute permission="pricelist:upload"><PriceListUploadPage /></PermissionRoute>} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

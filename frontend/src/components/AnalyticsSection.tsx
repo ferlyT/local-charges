@@ -65,44 +65,46 @@ function StatCard({
   );
 }
 
-// ─── Mini Bar Chart (no library needed) ───────────────────────────────────────
-function MiniBarChart({ data }: { data: StatsData['monthlyTrend'] }) {
-  if (!data || data.length === 0) return null;
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+} from 'recharts';
 
-  const maxCount = Math.max(...data.map((d: { month: string; count: number }) => d.count), 1);
+// ─── Monthly Trend Chart (Recharts) ───────────────────────────────────────────
+function MonthlyTrendChart({ data }: { data: StatsData['monthlyTrend'] }) {
+  if (!data || data.length === 0) {
+    return <div className="text-center text-secondary text-sm py-4">Belum ada data</div>;
+  }
 
-  const monthLabel = (ym: string) => {
-    const [year, month] = ym.split('-');
-    const d = new Date(parseInt(year), parseInt(month) - 1);
-    return d.toLocaleDateString('id-ID', { month: 'short' });
-  };
+  const formattedData = data.map((d: { month: string; count: number }) => {
+    const [year, month] = d.month.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return {
+      name: date.toLocaleDateString('id-ID', { month: 'short' }),
+      count: d.count,
+    };
+  });
 
   return (
-    <div className="flex items-end gap-1.5 h-16 w-full">
-      {data.map((d: { month: string; count: number }, i: number) => {
-        const pct = Math.max((d.count / maxCount) * 100, 4);
-        const isLast = i === data.length - 1;
-        return (
-          <div key={d.month} className="flex flex-col items-center gap-1 flex-1 h-full justify-end group">
-            <div className="relative w-full flex justify-center">
-              {/* Tooltip */}
-              <div className="absolute bottom-full mb-1.5 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
-                <div className="bg-surface border border-secondary/20 rounded-md px-2 py-1 shadow-lg text-center">
-                  <div className="text-[0.75rem] font-bold text-primary whitespace-nowrap">{d.count} form</div>
-                </div>
-                <div className="w-2 h-2 bg-surface border-b border-r border-secondary/20 rotate-45 -mt-1" />
-              </div>
-              <div
-                className={`w-full rounded-t-md transition-all duration-500 ${isLast ? 'bg-tertiary' : 'bg-tertiary/40 group-hover:bg-tertiary/60'}`}
-                style={{ height: `${pct}%` }}
-              />
-            </div>
-            <div className={`text-[0.62rem] font-medium whitespace-nowrap ${isLast ? 'text-tertiary' : 'text-secondary/60'}`}>
-              {monthLabel(d.month)}
-            </div>
-          </div>
-        );
-      })}
+    <div className="w-full h-full min-h-[200px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'currentColor' }} className="text-secondary/60" />
+          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'currentColor' }} className="text-secondary/60" allowDecimals={false} />
+          <Tooltip 
+            contentStyle={{ borderRadius: '8px', border: '1px solid rgba(120, 120, 120, 0.2)', backgroundColor: 'var(--color-surface)' }}
+            itemStyle={{ fontWeight: 'bold' }}
+            formatter={(value: number) => [value, 'Form']}
+          />
+          <Area type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -253,7 +255,7 @@ export default function AnalyticsSection({ stats, isLoading }: {
             <div className="text-[0.7rem] font-semibold text-secondary uppercase tracking-wider">Tren 6 Bulan</div>
             <div className="text-[1.1rem] font-bold text-primary mt-0.5">Form per Bulan</div>
           </div>
-          <MiniBarChart data={stats.monthlyTrend} />
+          <MonthlyTrendChart data={stats.monthlyTrend} />
         </div>
 
         {/* Status Breakdown */}

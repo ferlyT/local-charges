@@ -23,6 +23,7 @@ model tbUsers {
   localChargesLampiran tbLocalChargesLampiran[]
   inspectionReports    tbInspectionReport[]
   inspectionReportLampiran tbInspectionReportLampiran[]
+  priceListUploads     PriceListUpload[]
 }
 
 model tbRoles {
@@ -161,4 +162,44 @@ model tbInspectionReportLampiran {
   fdKeterangan         String?            @db.VarChar(255)
 
   @@map("tbInspectionReportLampiran")
+}
+
+// ============================================================
+// PRICE LIST MODULE
+// ============================================================
+
+model PriceListUpload {
+  id            Int      @id @default(autoincrement())
+  fileName      String   @db.NVarChar(255)
+  uploadedBy    Int?
+  user          tbUsers? @relation(fields: [uploadedBy], references: [fdId], onUpdate: NoAction)
+  uploadedAt    DateTime @default(now())
+  priceDate     DateTime?
+  effectiveDate DateTime
+  status        String   @default("PARSED") @db.NVarChar(20)
+  warnings      String?  @db.NVarChar(Max)
+  rawSnapshot   String?  @db.NVarChar(Max)
+  items         PriceListItem[]
+
+  @@index([uploadedAt])
+  @@index([priceDate])
+  @@index([effectiveDate])
+  @@map("PriceListUpload")
+}
+
+model PriceListItem {
+  id          Int      @id @default(autoincrement())
+  uploadId    Int
+  upload      PriceListUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  sheetType   String   @db.NVarChar(20)   
+  mode        String   @db.NVarChar(20)   
+  destination String   @db.NVarChar(20)   
+  transitTime String?  @db.NVarChar(50)   
+  category    String   @db.NVarChar(150)  
+  price       Decimal  @db.Decimal(14, 2)
+
+  @@index([uploadId])
+  @@index([sheetType, mode, destination, category])
+  @@map("PriceListItem")
 }

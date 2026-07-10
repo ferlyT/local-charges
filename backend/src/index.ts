@@ -12,6 +12,8 @@ import usersRoutes from './routes/users';
 import rolesRoutes from './routes/roles';
 import logsRoutes from './routes/logs';
 import inspectionReportRoutes from './routes/inspectionReport';
+import employeesRoutes from './routes/employees';
+import { priceListRoutes } from './routes/priceList';
 import { logger as winstonLogger } from './lib/logger';
 
 const app = new Hono();
@@ -51,6 +53,8 @@ app.route('/api/v1/users', usersRoutes);
 app.route('/api/v1/roles', rolesRoutes);
 app.route('/api/v1/logs', logsRoutes);
 app.route('/api/v1/inspection-reports', inspectionReportRoutes);
+app.route('/api/v1/employees', employeesRoutes);
+app.route('/api/v1/pricelist', priceListRoutes);
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 

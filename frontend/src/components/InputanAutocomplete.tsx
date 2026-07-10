@@ -14,9 +14,10 @@ interface InputanAutocompleteProps {
   onChange: (value: string) => void;
   onSelect: (data: InputanData) => void;
   required?: boolean;
+  disabled?: boolean;
 }
 
-export default function InputanAutocomplete({ value, onChange, onSelect, required }: InputanAutocompleteProps) {
+export default function InputanAutocomplete({ value, onChange, onSelect, required, disabled }: InputanAutocompleteProps) {
   const {
     isOpen,
     setIsOpen,
@@ -43,11 +44,12 @@ export default function InputanAutocomplete({ value, onChange, onSelect, require
     <div ref={wrapperRef} className="relative w-full">
       <input
         required={required}
+        disabled={disabled}
         type="text"
         value={search}
         onChange={(e) => handleChange(e.target.value)}
-        onFocus={() => setIsOpen(true)}
-        className="block w-full rounded-md border border-secondary/30 bg-surface px-3 py-2 text-[0.95rem] text-primary focus:border-tertiary focus:outline-none focus:ring-1 focus:ring-tertiary"
+        onFocus={() => !disabled && setIsOpen(true)}
+        className="block w-full rounded-md border border-secondary/30 bg-surface px-3 py-2 text-[0.95rem] text-primary focus:border-tertiary focus:outline-none focus:ring-1 focus:ring-tertiary disabled:bg-neutral/60 disabled:text-secondary disabled:cursor-not-allowed"
         placeholder="Search No. Inputan..."
         autoComplete="off"
       />

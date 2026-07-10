@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { LogOut, LayoutDashboard, FileText, ChevronLeft, ChevronRight, Users, UserCircle, Shield, Trash2, ClipboardList } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, ChevronLeft, ChevronRight, Users, UserCircle, Shield, Trash2, ClipboardList, DollarSign } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import LanguageToggle from './LanguageToggle';
 import { useTranslation } from '../hooks/useTranslation';
@@ -28,6 +28,9 @@ export default function Layout() {
     ] : []),
     ...((hasPermission(user, 'inspection_reports:read')) ? [
       { name: t('nav_inspection_reports'), path: '/inspection-reports', icon: ClipboardList },
+    ] : []),
+    ...((hasPermission(user, 'pricelist:read')) ? [
+      { name: 'Price List', path: '/pricelist', icon: DollarSign },
     ] : []),
     ...((hasPermission(user, 'local_charges:delete')) ? [
       { name: t('nav_recycle_bin'), path: '/recycle-bin', icon: Trash2 },

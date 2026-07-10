@@ -61,7 +61,12 @@ lampiranRoutes.delete('/:id', authMiddleware, async (c) => {
 
   let lampiran: any = await prisma.tbLocalChargesLampiran.findUnique({
     where: { fdId: id },
+    include: { localCharges: { select: { fdStatus: true } } }
   });
+
+  if (lampiran && lampiran.localCharges && lampiran.localCharges.fdStatus === 2) {
+    return c.json({ message: 'Form tidak bisa diubah karena status sudah Done' }, 403);
+  }
 
   let isInspectionReport = false;
 
@@ -112,6 +117,10 @@ lampiranRoutes.post('/local-charges/:id', authMiddleware, async (c) => {
 
   if (!localCharge) {
     return c.json({ message: 'Local Charge form not found' }, 404);
+  }
+
+  if (localCharge.fdStatus === 2) {
+    return c.json({ message: 'Form tidak bisa diubah karena status sudah Done' }, 403);
   }
 
   try {

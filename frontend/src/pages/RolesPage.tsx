@@ -25,6 +25,7 @@ const PERMISSION_GROUPS = [
       { id: 'local_charges:create', label: 'Create Local Charges' },
       { id: 'local_charges:edit', label: 'Edit Local Charges' },
       { id: 'local_charges:delete', label: 'Delete Local Charges' },
+      { id: 'local_charges:pull_invoice', label: 'Pull Invoice (Update Status ke Done)' },
     ]
   },
   {
@@ -41,6 +42,13 @@ const PERMISSION_GROUPS = [
     permissions: [
       { id: 'users:manage', label: 'Manage Users' },
       { id: 'roles:manage', label: 'Manage Roles' },
+    ]
+  },
+  {
+    group: 'Price List',
+    permissions: [
+      { id: 'pricelist:read', label: 'View Price List Dashboard & History' },
+      { id: 'pricelist:upload', label: 'Upload New Price List' },
     ]
   }
 ];
@@ -306,7 +314,6 @@ export default function RolesPage() {
                                 type="checkbox"
                                 checked={formData.permissions.includes(perm.id)}
                                 onChange={() => handlePermissionToggle(perm.id)}
-                                disabled={editingRole?.fdNama === 'admin'}
                                 className="w-4 h-4 text-tertiary rounded border-secondary/30 focus:ring-tertiary/30 cursor-pointer"
                               />
                               <span className="text-sm text-primary font-medium">{perm.label}</span>
@@ -317,7 +324,7 @@ export default function RolesPage() {
                     ))}
                   </div>
                   {editingRole?.fdNama === 'admin' && (
-                    <p className="text-xs text-secondary mt-2 italic bg-secondary/10 p-2 rounded-md">{t('roles_msg_admin_perm')}</p>
+                    <p className="text-xs text-secondary mt-2 italic bg-secondary/10 p-2 rounded-md">{t('roles_msg_admin_perm', 'Note: Admin role automatically bypasses all permission checks, but you can explicitly define permissions here.')}</p>
                   )}
                 </div>
               </form>

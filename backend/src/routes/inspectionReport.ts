@@ -131,34 +131,40 @@ inspectionReportRoutes.get(
   requirePermission('inspection_reports:read'),
   async (c) => {
     const search = c.req.query('search')?.trim() ?? '';
-    const markingCode = c.req.query('markingCode')?.trim() ?? '';
     const custSearch = c.req.query('custSearch')?.trim() ?? '';
+    const markingNo = c.req.query('markingNo')?.trim() ?? '';
+    const terima = c.req.query('terima')?.trim() ?? '';
     const page = Number(c.req.query('page')) || 1;
     const limit = Number(c.req.query('limit')) || 20;
 
     try {
-      let whereClause: any;
+      let whereClause: any = {};
+      const andConditions: any[] = [];
 
-      if (markingCode) {
-        // Two-stage filter mode: markingCode is fixed, optionally filter by custSearch
-        whereClause = {
-          fdMarkingCode: { startsWith: markingCode },
-          ...(custSearch ? {
-            OR: [
-              { fdCustName: { contains: custSearch } },
-              { fdMarkingNo: { contains: custSearch } },
-            ]
-          } : {}),
-        };
-      } else if (search) {
-        // Standard OR search across all relevant fields
-        whereClause = {
+      if (search) {
+        andConditions.push({
           OR: [
             { fdCustName: { contains: search } },
             { fdMarkingCode: { startsWith: search } },
             { fdMarkingNo: { startsWith: search } },
           ],
-        };
+        });
+      }
+
+      if (custSearch) {
+        andConditions.push({ fdCustName: { contains: custSearch } });
+      }
+      
+      if (markingNo) {
+        andConditions.push({ fdMarkingNo: { contains: markingNo } });
+      }
+
+      if (terima) {
+        andConditions.push({ fdTerima: { contains: terima } });
+      }
+
+      if (andConditions.length > 0) {
+        whereClause.AND = andConditions;
       }
 
       const results = await prisma.vwtbEntryListCustomer.findMany({

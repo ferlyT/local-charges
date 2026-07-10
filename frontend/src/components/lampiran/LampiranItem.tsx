@@ -20,8 +20,8 @@ export default function LampiranItem({ item, onDelete, onClick }: LampiranItemPr
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isImage = item.fdMimeType.startsWith('image/');
-  const isPdf = item.fdMimeType === 'application/pdf';
+  const isImage = item.fdMimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(item.fdFileName || '');
+  const isPdf = item.fdMimeType === 'application/pdf' || /\.(pdf)$/i.test(item.fdFileName || '');
 
   // Extract filename safely
   const rawFileName = item.fdFilePath.split('/').pop() || item.fdFileName;

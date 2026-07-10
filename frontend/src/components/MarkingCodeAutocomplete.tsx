@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { Search, Plus, X, Loader2, ChevronDown } from 'lucide-react';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -17,23 +18,29 @@ interface MarkingCodeAutocompleteProps {
   required?: boolean;
 }
 
-const DELIMITER = ' ';
-
-function parseInput(raw: string): { markingPart: string; custPart: string; isTwoStage: boolean } {
-  const delimIdx = raw.indexOf(DELIMITER);
-  if (delimIdx === -1) {
-    return { markingPart: '', custPart: '', isTwoStage: false };
-  }
-  const markingPart = raw.slice(0, delimIdx).trim();
-  const custPart = raw.slice(delimIdx + 1); // keep trailing chars for real-time filtering
-  return { markingPart, custPart, isTwoStage: true };
-}
+const SUPPORTED_VARIABLES = [
+  { value: 'custSearch', tKey: 'ac_var_custSearch' },
+  { value: 'markingNo', tKey: 'ac_var_markingNo' },
+  { value: 'terima', tKey: 'ac_var_terima' }
+] as const;
 
 export default function MarkingCodeAutocomplete({ value, onChange, onSelect, required }: MarkingCodeAutocompleteProps) {
   const { t } = useTranslation();
 
+  const [variables, setVariables] = useState([{ key: 'custSearch', value: '' }]);
   const [extraParams, setExtraParams] = useState<Record<string, string>>({});
-  const [filterMode, setFilterMode] = useState<{ marking: string; cust: string } | null>(null);
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    variables.forEach(v => {
+      if (v.key && v.key.trim() !== '') {
+        // We do not skip if v.value is empty here, because the user might have cleared it.
+        // useAutocomplete will skip appending empty values to the URL.
+        params[v.key.trim()] = v.value;
+      }
+    });
+    setExtraParams(params);
+  }, [variables]);
 
   const {
     isOpen,
@@ -55,8 +62,8 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
   });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop <= e.currentTarget.clientHeight + 10;
-    if (bottom) {
+    const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop <= e.currentTarget.clientHeight + 80;
+    if (bottom && hasMore && !isLoadingMore && !isLoading) {
       loadMore();
     }
   };
@@ -65,17 +72,8 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
     const upperVal = raw.toUpperCase();
     setSearch(upperVal);
     onChange(upperVal);
-    setIsOpen(true);
-
-    const { markingPart, custPart, isTwoStage } = parseInput(upperVal);
-    if (isTwoStage && markingPart) {
-      setExtraParams({ markingCode: markingPart, custSearch: custPart.trim() });
-      setFilterMode({ marking: markingPart, cust: custPart.trim() });
-    } else {
-      setExtraParams({});
-      setFilterMode(null);
-    }
-  }, [onChange, setSearch, setIsOpen]);
+    if (!isOpen) setIsOpen(true);
+  }, [onChange, setSearch, setIsOpen, isOpen]);
 
   const handleSelectLocal = (data: EntryListData) => {
     const displayValue = data.fdMarkingCode;
@@ -83,75 +81,169 @@ export default function MarkingCodeAutocomplete({ value, onChange, onSelect, req
     onChange(displayValue);
     onSelect(data);
     setIsOpen(false);
-    setExtraParams({});
-    setFilterMode(null);
   };
+
+  function addVariable() {
+    // Find the first available key that isn't used yet
+    const usedKeys = variables.map(v => v.key);
+    const availableKey = SUPPORTED_VARIABLES.find(opt => !usedKeys.includes(opt.value))?.value || 'custSearch';
+    setVariables((prev) => [...prev, { key: availableKey, value: '' }]);
+  }
+
+  function removeVariable(index: number) {
+    setVariables((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateVariable(index: number, field: 'key' | 'value', val: string) {
+    setVariables((prev) =>
+      prev.map((v, i) => (i === index ? { ...v, [field]: val } : v))
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      <input
-        required={required}
-        type="text"
-        value={search}
-        onChange={(e) => handleChange(e.target.value)}
-        onFocus={() => setIsOpen(true)}
-        className="block w-full rounded-md border border-secondary/30 bg-surface px-3 py-2 text-[0.95rem] text-primary focus:border-tertiary focus:outline-none focus:ring-1 focus:ring-tertiary"
-        placeholder={t('mc_search_placeholder')}
-        autoComplete="off"
-      />
+      {/* ---------- Input utama ---------- */}
+      <div
+        className={`relative flex items-center rounded-md border bg-surface transition-colors ${isOpen
+            ? "border-tertiary/60 ring-1 ring-tertiary/50"
+            : "border-secondary/30 hover:border-secondary/50"
+          }`}
+      >
+        <Search className="absolute left-3.5 h-4 w-4 text-secondary/70" />
+        <input
+          required={required}
+          value={search}
+          onChange={(e) => handleChange(e.target.value)}
+          onFocus={() => setIsOpen(true)}
+          placeholder={t('mc_search_placeholder') || "Cari data..."}
+          className="w-full bg-transparent py-2 pl-10 pr-10 text-[0.95rem] text-primary placeholder:text-secondary/60 focus:outline-none rounded-md"
+          autoComplete="off"
+        />
+        <ChevronDown
+          className={`absolute right-3.5 h-4 w-4 text-secondary/70 transition-transform ${isOpen ? "rotate-180 text-tertiary" : ""
+            }`}
+        />
+      </div>
 
-      {/* Hint text below input */}
-      {!filterMode && (
-        <p className="mt-1 text-[0.68rem] text-secondary/70">{t('mc_filter_hint')}</p>
-      )}
-
+      {/* ---------- Dropdown panel ---------- */}
       {isOpen && (
-        <div
-          className="absolute z-10 w-full mt-1 bg-surface border border-secondary/20 rounded-md shadow-lg max-h-60 overflow-auto"
-          onScroll={handleScroll}
-        >
-          {/* Filter mode label banner */}
-          {filterMode && (
-            <div className="px-3 py-1.5 text-[0.7rem] font-medium bg-tertiary/10 text-tertiary border-b border-tertiary/20 flex items-center gap-1.5">
-              <span>🔍</span>
-              <span>
-                {t('mc_filter_mode', { marking: filterMode.marking, cust: filterMode.cust || '…' })}
+        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-secondary/20 bg-surface shadow-lg max-h-[28rem] flex flex-col">
+          {/* --- Section: Variabel tambahan --- */}
+          <div className="border-b border-secondary/20 p-3 shrink-0">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[0.7rem] font-medium uppercase tracking-wide text-secondary">
+                {t('ac_var_label') || 'Variabel tambahan'}
               </span>
-            </div>
-          )}
-
-          {isLoading ? (
-            <div className="p-3 text-[0.95rem] text-secondary text-center">{t('state_loading')}</div>
-          ) : options.length > 0 ? (
-            <div className="flex flex-col">
-              <ul className="py-1">
-                {options.map((opt, idx) => (
-                  <li
-                    key={`${opt.fdListCode}-${idx}`}
-                    onClick={() => handleSelectLocal(opt)}
-                    className="px-3 py-2 text-[0.95rem] cursor-pointer hover:bg-neutral text-primary border-b border-secondary/10 last:border-0"
-                  >
-                    <div className="font-medium text-[#C26B5B]">
-                      {opt.fdCustName || t('mc_unknown_cust')}
-                    </div>
-                    <div className="text-[0.72rem] text-secondary mt-0.5">
-                      {opt.fdMarkingCode} | {t('mc_list')}: {opt.fdListCode} | {t('mc_no')}: {opt.fdMarkingNo}
-                      {opt.fdTerima && opt.fdTerima.trim() !== '' && ` | Terima: ${opt.fdTerima.trim()}`}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              {isLoadingMore && (
-                <div className="px-3 py-2 text-xs text-center text-secondary border-t border-secondary/10">
-                  {t('mc_loading_more')}
-                </div>
+              {variables.length < SUPPORTED_VARIABLES.length && (
+                <button
+                  type="button"
+                  onClick={addVariable}
+                  className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-tertiary hover:bg-tertiary/10"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t('ac_var_add') || 'Tambah'}
+                </button>
               )}
-              <div className="px-3 py-1.5 text-xs text-center text-secondary border-t border-secondary/20 bg-surface sticky bottom-0">
-                {t('mc_showing_rows', { count: options.length })} {hasMore ? `(${t('mc_scroll_more')})` : `(${t('mc_all_loaded')})`}
-              </div>
             </div>
-          ) : (
-            <div className="p-3 text-[0.95rem] text-secondary text-center">{t('mc_no_results')}</div>
+
+            <div className="space-y-2">
+              {variables.map((v, i) => {
+                const usedKeys = variables.map(varItem => varItem.key);
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <select
+                      value={v.key}
+                      onChange={(e) => updateVariable(i, "key", e.target.value)}
+                      className="w-2/5 rounded-md border border-secondary/30 bg-surface px-2 py-1.5 text-xs text-primary focus:border-tertiary focus:outline-none"
+                    >
+                      {SUPPORTED_VARIABLES.map(opt => (
+                        <option
+                          key={opt.value}
+                          value={opt.value}
+                          disabled={usedKeys.includes(opt.value) && opt.value !== v.key}
+                        >
+                          {t(opt.tKey) || opt.tKey}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={v.value}
+                      onChange={(e) => updateVariable(i, "value", e.target.value)}
+                      placeholder={t('ac_var_value') || "nilai"}
+                      className="flex-1 rounded-md border border-secondary/30 bg-surface px-2 py-1.5 text-xs text-primary placeholder:text-secondary/50 focus:border-tertiary focus:outline-none"
+                    />
+                    {variables.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeVariable(i)}
+                        className="rounded p-1.5 text-secondary hover:bg-neutral hover:text-red-400"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* --- Section: Hasil query (infinite scroll) --- */}
+          <div
+            onScroll={handleScroll}
+            className="overflow-y-auto flex-1 min-h-[10rem]"
+          >
+            {options.length === 0 && !isLoading ? (
+              <div className="px-4 py-8 text-center text-[0.95rem] text-secondary">
+                {t('mc_no_results') || 'Tidak ada hasil ditemukan.'}
+              </div>
+            ) : (
+              <div className="flex flex-col py-1">
+                {options.map((opt, idx) => {
+                  const title = opt.fdCustName || t('mc_unknown_cust') || 'Unknown Customer';
+                  const parts = [
+                    opt.fdMarkingCode ? `Kode: ${opt.fdMarkingCode}` : '',
+                    opt.fdMarkingNo ? `No: ${opt.fdMarkingNo}` : '',
+                    opt.fdTerima && opt.fdTerima.trim() !== '' ? `Terima: ${opt.fdTerima.trim()}` : '',
+                    opt.fdListCode ? `List: ${opt.fdListCode}` : ''
+                  ].filter(Boolean).join(' · ');
+
+                  return (
+                    <button
+                      key={`${opt.fdListCode}-${idx}`}
+                      type="button"
+                      onClick={() => handleSelectLocal(opt)}
+                      className="flex w-full items-start gap-2.5 border-b border-secondary/10 px-3 py-2 text-left hover:bg-neutral last:border-0"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[0.95rem] font-medium text-[#C26B5B]">{title}</p>
+                        <p className="truncate text-[0.72rem] text-secondary mt-0.5">{parts || 'Tidak ada info tambahan'}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {(isLoading || isLoadingMore) && (
+              <div className="flex items-center justify-center gap-2 py-3 text-xs text-secondary border-t border-secondary/10">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-tertiary" />
+                {isLoadingMore ? (t('mc_loading_more') || 'Memuat lebih banyak...') : (t('state_loading') || 'Memuat hasil...')}
+              </div>
+            )}
+          </div>
+
+          {/* --- Footer: ringkasan jumlah hasil --- */}
+          {options.length > 0 && (
+            <div className="flex items-center justify-between border-t border-secondary/20 bg-surface px-3 py-2 text-xs text-secondary shrink-0">
+              <span>
+                {t('mc_showing_rows', { count: options.length }) || `Menampilkan ${options.length} hasil`}
+              </span>
+              {hasMore && !isLoading && !isLoadingMore ? (
+                <span className="text-tertiary">{t('mc_scroll_more') || 'scroll untuk muat lebih banyak'}</span>
+              ) : !hasMore && !isLoading && !isLoadingMore ? (
+                <span className="text-secondary/70">{t('mc_all_loaded') || 'Semua hasil dimuat'}</span>
+              ) : null}
+            </div>
           )}
         </div>
       )}
