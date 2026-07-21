@@ -12,7 +12,7 @@ export const translations = {
 
     // === DASHBOARD ===
     dashboard_welcome: 'Welcome back, {name}!',
-    dashboard_subtitle: "Here's a quick overview of your workspace today. Manage your domestic operational charges and track your inspection reports all in one place.",
+    dashboard_subtitle: "Here's a quick overview of your workspace today. Manage your domestic operational charges, track your inspection reports, and monitor price lists all in one place.",
     dashboard_stat_lc: 'Local Charges',
     dashboard_stat_lc_sub: 'Total active charges',
     dashboard_stat_ir: 'Inspection Reports',
@@ -33,6 +33,9 @@ export const translations = {
     state_loading: 'Loading...',
     state_no_charges: 'No recent charges found.',
     state_no_reports: 'No recent reports found.',
+    status_draft: 'Draft',
+    status_done: 'Done',
+    status_closed: 'Closed',
 
     // === LOCAL CHARGES PAGE ===
     lc_title: 'Local Charges',
@@ -345,6 +348,9 @@ export const translations = {
     pl_detail_compared: 'Compared to upload effective {date}',
     pl_detail_first: 'First upload — no previous data to compare',
     pl_detail_effective: 'Effective from',
+    pl_status_parsed: 'Success',
+    pl_status_partial: 'Partial',
+    pl_status_failed: 'Failed',
   },
 
   id: {
@@ -360,7 +366,7 @@ export const translations = {
 
     // === DASHBOARD ===
     dashboard_welcome: 'Selamat datang, {name}!',
-    dashboard_subtitle: 'Berikut ringkasan cepat ruang kerja Anda hari ini. Kelola biaya operasional lokal dan pantau laporan BAP Anda dalam satu tempat.',
+    dashboard_subtitle: 'Berikut ringkasan cepat ruang kerja Anda hari ini. Kelola biaya operasional lokal, pantau laporan BAP, dan kelola price list Anda dalam satu tempat.',
     dashboard_stat_lc: 'Biaya Lokal',
     dashboard_stat_lc_sub: 'Total tagihan aktif',
     dashboard_stat_ir: 'Laporan BAP',
@@ -381,6 +387,9 @@ export const translations = {
     state_loading: 'Memuat...',
     state_no_charges: 'Tidak ada tagihan terbaru.',
     state_no_reports: 'Tidak ada laporan terbaru.',
+    status_draft: 'Draft',
+    status_done: 'Selesai',
+    status_closed: 'Ditutup',
 
     // === LOCAL CHARGES PAGE ===
     lc_title: 'Biaya Lokal',
@@ -693,6 +702,9 @@ export const translations = {
     pl_detail_compared: 'Dibandingkan dengan upload berlaku {date}',
     pl_detail_first: 'Upload pertama — tidak ada data sebelumnya untuk dibandingkan',
     pl_detail_effective: 'Berlaku mulai',
+    pl_status_parsed: 'Berhasil',
+    pl_status_partial: 'Sebagian',
+    pl_status_failed: 'Gagal',
   }
 } as const;
 

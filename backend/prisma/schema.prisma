@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  engineType = "binary"
+  engineType = "client"
 }
 
 datasource db {
@@ -23,7 +23,7 @@ model tbUsers {
   localChargesLampiran tbLocalChargesLampiran[]
   inspectionReports    tbInspectionReport[]
   inspectionReportLampiran tbInspectionReportLampiran[]
-  priceListUploads     PriceListUpload[]
+  priceListUploads     tbPriceListUpload[]
 }
 
 model tbRoles {
@@ -86,6 +86,8 @@ model tbLocalChargesDetail {
   fdNoBilling      String?        @db.VarChar(100)
   fdKeterangan     String?        @db.VarChar(500)
   fdNoInputan      String?        @db.VarChar(100)
+  fdMataUang       String?        @default("IDR") @db.VarChar(10)
+  fdJumlah         Decimal?       @db.Decimal(18, 2)
 }
 
 model tbLocalChargesLampiran {
@@ -168,38 +170,53 @@ model tbInspectionReportLampiran {
 // PRICE LIST MODULE
 // ============================================================
 
-model PriceListUpload {
-  id            Int      @id @default(autoincrement())
-  fileName      String   @db.NVarChar(255)
-  uploadedBy    Int?
-  user          tbUsers? @relation(fields: [uploadedBy], references: [fdId], onUpdate: NoAction)
-  uploadedAt    DateTime @default(now())
-  priceDate     DateTime?
-  effectiveDate DateTime
-  status        String   @default("PARSED") @db.NVarChar(20)
-  warnings      String?  @db.NVarChar(Max)
-  rawSnapshot   String?  @db.NVarChar(Max)
-  items         PriceListItem[]
+model tbPriceListUpload {
+  fdId            Int      @id @default(autoincrement())
+  fdFileName      String   @db.NVarChar(255)
+  fdUploadedBy    Int?
+  user            tbUsers? @relation(fields: [fdUploadedBy], references: [fdId], onUpdate: NoAction)
+  fdUploadedAt    DateTime @default(now())
+  fdPriceDate     DateTime?
+  fdEffectiveDate DateTime
+  fdStatus        String   @default("PARSED") @db.NVarChar(20)
+  fdWarnings      String?  @db.NVarChar(Max)
+  fdRawSnapshot   String?  @db.NVarChar(Max)
 
-  @@index([uploadedAt])
-  @@index([priceDate])
-  @@index([effectiveDate])
-  @@map("PriceListUpload")
+  items           tbPriceListItem[]
+  branches        tbPriceListUploadBranch[]
+
+  @@index([fdUploadedAt])
+  @@index([fdPriceDate])
+  @@index([fdEffectiveDate])
+  @@map("tbPriceListUpload")
 }
 
-model PriceListItem {
-  id          Int      @id @default(autoincrement())
-  uploadId    Int
-  upload      PriceListUpload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+model tbPriceListItem {
+  fdId          Int               @id @default(autoincrement())
+  fdUploadId    Int
+  upload        tbPriceListUpload @relation(fields: [fdUploadId], references: [fdId], onDelete: Cascade)
 
-  sheetType   String   @db.NVarChar(20)   
-  mode        String   @db.NVarChar(20)   
-  branch      String   @db.NVarChar(20)
-  transitTime String?  @db.NVarChar(50)   
-  category    String   @db.NVarChar(150)  
-  price       Decimal  @db.Decimal(14, 2)
+  fdSheetType   String   @db.NVarChar(20)
+  fdMode        String   @db.NVarChar(20)
+  fdBranch      String   @db.NVarChar(20)
+  fdTransitTime String?  @db.NVarChar(50)
+  fdCategory    String   @db.NVarChar(150)
+  fdPrice       Decimal  @db.Decimal(14, 2)
 
-  @@index([uploadId])
-  @@index([sheetType, mode, branch, category])
-  @@map("PriceListItem")
+  @@index([fdUploadId])
+  @@index([fdSheetType, fdMode, fdBranch, fdCategory])
+  @@map("tbPriceListItem")
+}
+
+model tbPriceListUploadBranch {
+  fdId          Int               @id @default(autoincrement())
+  fdUploadId    Int
+  upload        tbPriceListUpload @relation(fields: [fdUploadId], references: [fdId], onDelete: Cascade)
+  fdBranch      String            @db.NVarChar(20)
+  fdMarkingCode String?           @db.NVarChar(30)
+
+  @@unique([fdUploadId, fdBranch])
+  @@index([fdBranch])
+  @@index([fdMarkingCode])
+  @@map("tbPriceListUploadBranch")
 }

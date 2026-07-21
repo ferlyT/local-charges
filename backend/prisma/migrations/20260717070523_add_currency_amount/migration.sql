@@ -1,0 +1,20 @@
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- AlterTable
+ALTER TABLE [dbo].[tbLocalChargesDetail] ADD [fdJumlah] DECIMAL(18,2),
+[fdMataUang] VARCHAR(10) CONSTRAINT [tbLocalChargesDetail_fdMataUang_df] DEFAULT 'IDR';
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH

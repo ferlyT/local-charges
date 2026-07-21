@@ -3,23 +3,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
-import Login from './pages/Login';
+import { Dashboard } from './features/dashboard';
+import { LocalChargesList, LocalChargesForm } from './features/local-charges';
+import { InspectionReportsList, InspectionReportForm } from './features/inspection-reports';
+import { Login, Register, Profile } from './features/auth';
+import { Users, Roles } from './features/users';
+import { RecycleBin } from './features/recycle-bin';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import LocalChargesPage from './pages/LocalChargesPage';
-import FormPage from './pages/FormPage';
-import Register from './pages/Register';
-import Users from './pages/Users';
-import ProfilePage from './pages/ProfilePage';
-import RolesPage from './pages/RolesPage';
-import RecycleBin from './pages/RecycleBin';
-import InspectionReportsPage from './pages/InspectionReportsPage';
-import InspectionReportFormPage from './pages/InspectionReportFormPage';
-import PriceListDashboardPage from './pages/PriceList/PriceListDashboardPage';
-import PriceListHistoryPage from './pages/PriceList/PriceListHistoryPage';
-import PriceListUploadPage from './pages/PriceList/PriceListUploadPage';
-import PriceListDetailPage from './pages/PriceList/PriceListDetailPage';
+import {
+  PriceListDashboard,
+  PriceListHistory,
+  PriceListUpload,
+  PriceListDetail
+} from './features/price-list';
 import { hasPermission } from './lib/permissions';
 
 const queryClient = new QueryClient();
@@ -96,21 +93,21 @@ function App() {
             } 
           >
             <Route index element={<Dashboard />} />
-            <Route path="local-charges" element={<PermissionRoute permission="local_charges:create"><LocalChargesPage /></PermissionRoute>} />
-            <Route path="new" element={<PermissionRoute permission="local_charges:create"><FormPage /></PermissionRoute>} />
-            <Route path="form/:id" element={<PermissionRoute permission="local_charges:create"><FormPage /></PermissionRoute>} />
+            <Route path="local-charges" element={<PermissionRoute permission="local_charges:create"><LocalChargesList /></PermissionRoute>} />
+            <Route path="new" element={<PermissionRoute permission="local_charges:create"><LocalChargesForm /></PermissionRoute>} />
+            <Route path="form/:id" element={<PermissionRoute permission="local_charges:create"><LocalChargesForm /></PermissionRoute>} />
             <Route path="users" element={<Users />} />
-            <Route path="roles" element={<RolesPage />} />
+            <Route path="roles" element={<Roles />} />
             <Route path="recycle-bin" element={<PermissionRoute permission="local_charges:delete"><RecycleBin /></PermissionRoute>} />
-            <Route path="inspection-reports" element={<PermissionRoute permission="local_charges:create"><InspectionReportsPage /></PermissionRoute>} />
-            <Route path="inspection-reports/new" element={<PermissionRoute permission="local_charges:create"><InspectionReportFormPage /></PermissionRoute>} />
-            <Route path="inspection-reports/:id" element={<PermissionRoute permission="local_charges:create"><InspectionReportFormPage /></PermissionRoute>} />
-            <Route path="pricelist" element={<PermissionRoute permission="pricelist:read"><PriceListDashboardPage /></PermissionRoute>} />
-            <Route path="pricelist/dashboard" element={<PermissionRoute permission="pricelist:read"><PriceListDashboardPage /></PermissionRoute>} />
-            <Route path="pricelist/uploads" element={<PermissionRoute permission="pricelist:read"><PriceListHistoryPage /></PermissionRoute>} />
-            <Route path="pricelist/uploads/:id" element={<PermissionRoute permission="pricelist:read"><PriceListDetailPage /></PermissionRoute>} />
-            <Route path="pricelist/upload" element={<PermissionRoute permission="pricelist:upload"><PriceListUploadPage /></PermissionRoute>} />
-            <Route path="profile" element={<ProfilePage />} />
+            <Route path="inspection-reports" element={<PermissionRoute permission="local_charges:create"><InspectionReportsList /></PermissionRoute>} />
+            <Route path="inspection-reports/new" element={<PermissionRoute permission="local_charges:create"><InspectionReportForm /></PermissionRoute>} />
+            <Route path="inspection-reports/:id" element={<PermissionRoute permission="local_charges:create"><InspectionReportForm /></PermissionRoute>} />
+            <Route path="pricelist" element={<PermissionRoute permission="pricelist:read"><PriceListDashboard /></PermissionRoute>} />
+            <Route path="pricelist/dashboard" element={<PermissionRoute permission="pricelist:read"><PriceListDashboard /></PermissionRoute>} />
+            <Route path="pricelist/uploads" element={<PermissionRoute permission="pricelist:read"><PriceListHistory /></PermissionRoute>} />
+            <Route path="pricelist/uploads/:id" element={<PermissionRoute permission="pricelist:read"><PriceListDetail /></PermissionRoute>} />
+            <Route path="pricelist/upload" element={<PermissionRoute permission="pricelist:upload"><PriceListUpload /></PermissionRoute>} />
+            <Route path="profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

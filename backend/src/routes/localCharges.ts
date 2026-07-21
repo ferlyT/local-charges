@@ -23,6 +23,8 @@ const detailSchema = z.object({
   fdNoBilling: z.string().nullable().optional(),
   fdKeterangan: z.string().nullable().optional(),
   fdNoInputan: z.string().min(1, 'No. Inputan wajib diisi'),
+  fdMataUang: z.string().nullable().optional(),
+  fdJumlah: z.union([z.number(), z.string()]).nullable().optional().transform(v => (v === '' ? null : v !== null && v !== undefined ? Number(v) : null)),
 });
 
 // Helper function to validate fdNoInputan uniqueness
