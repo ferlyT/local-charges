@@ -143,14 +143,18 @@ priceListRoutes.get("/filters", requirePermission("pricelist:read"), async (c) =
   return c.json(options);
 });
 
-// GET /api/pricelist/trend?sheetType=CS&mode=BY SEA&branch=SG&category=General Goods&from=2026-01-01&to=2026-12-31
+// GET /api/pricelist/trend?sheetType=CS&sheetType=MKT&mode=BY SEA&branch=SG&category=General Goods&category=Alkes&from=2026-01-01&to=2026-12-31
+// "sheetType" dan "category" bisa dikirim berkali-kali (multi-select di dashboard) —
+// dipakai c.req.queries() bukan c.req.query() supaya semua nilainya kebaca, bukan cuma satu.
 priceListRoutes.get("/trend", requirePermission("pricelist:read"), async (c) => {
-  const { sheetType, mode, branch, category, from, to } = c.req.query();
+  const { mode, branch, from, to } = c.req.query();
+  const sheetTypes = c.req.queries("sheetType");
+  const categories = c.req.queries("category");
   const trend = await getPriceTrend({
-    sheetType: sheetType || undefined,
+    sheetType: sheetTypes && sheetTypes.length > 0 ? sheetTypes : undefined,
     mode: mode || undefined,
     branch: branch || undefined,
-    category: category || undefined,
+    category: categories && categories.length > 0 ? categories : undefined,
     from: from ? new Date(from) : undefined,
     to: to ? new Date(to) : undefined,
   });

@@ -1,15 +1,17 @@
 # Agent Rules & Guidelines
 
-This document provides architectural rules and constraints that all AI Agents must follow when modifying this codebase.
+This document provides architectural rules, coding standards, and constraints that all AI Agents must follow when modifying this codebase.
 
-## Frontend Architecture (Feature-Sliced Design)
+---
+
+## 1. Frontend Architecture (Feature-Sliced Design)
 We use a **Feature-Based Architecture**. Do NOT place domain-specific logic, pages, or components in global folders (like `src/pages`).
-Instead, use `src/features/<feature-name>/`.
+Instead, encapsulate feature logic inside `src/features/<feature-name>/`.
 
 ### Feature Structure
 Each feature must encapsulate its own:
 - `pages/` (Page-level React components)
-- `components/` (Local UI components used only by this feature)
+- `components/` (Local UI components used ONLY by this feature)
 - `index.ts` (The Public API of the feature. **Only export what is needed by the rest of the app**, usually just the Pages).
 
 *Example:*
@@ -21,123 +23,104 @@ src/features/local-charges/
   index.ts
 ```
 
-### Routing
-The main router is defined in `src/App.tsx`.
+### Routing & Navigation
+- The main router is defined in `src/App.tsx`.
 - Import pages exclusively from the feature's `index.ts` (e.g., `import { LocalChargesList } from './features/local-charges';`).
-- Secure routes using the `<ProtectedRoute>` and `<PermissionRoute>` wrappers based on user roles.
+- Secure routes using `<ProtectedRoute>` and `<PermissionRoute>` wrappers based on user roles and permissions.
 
-## Imports & Dependencies
-- **Relative Imports**: When importing global utilities (`lib`, `hooks`, `stores`, `components`) from within a feature, use relative paths (e.g., `../../../lib/api`).
-- **State Management**: Use `Zustand` for global state (like auth). Avoid React Context unless absolutely necessary.
-- **Notifications**: Use `react-hot-toast` for success/error toasts.
+---
 
-## Internationalization (i18n)
-- Do NOT hardcode user-facing text in the UI.
-- Use the `useTranslation` hook from `src/hooks/useTranslation.ts`.
-- Add new translation strings to BOTH `en` and `id` objects in `src/lib/translations.ts`.
-- Usage: `const { t } = useTranslation(); <p>{t('your_key')}</p>`
+## 2. Coding Standards & Shared Assets
 
-## Backend Guidelines (Bun + Hono)
-<!-- DIPERBAIKI: dokumen lama menyebut "Bun + ElysiaJS" dan validasi TypeBox `t`.
-     Dikonfirmasi dari package.json backend (dependencies: hono, @hono/node-server,
-     @hono/zod-validator, hono-rate-limiter) — framework aktual adalah Hono, bukan Elysia. -->
-- Keep controllers thin. Validation must be done using **Zod** schemas via `@hono/zod-validator` (`zValidator`) at the route level — not Elysia's TypeBox `t`.
-- Always use `try/catch` and return appropriate HTTP status codes via `c.json(data, status)`.
-- Ensure all endpoints that require authorization use the `jwt` and `authPlugin` middlewares.
-- Do not run `prisma generate` unless the schema changes. The environment uses `bun`.
-- **Prisma**: project uses **Prisma 7.x** with driver adapters (`@prisma/adapter-mssql`), not the classic Rust binary engine. Connection URL lives in `prisma.config.ts`, not in `schema.prisma`'s `datasource` block. Generator block should use `engineType = "client"` (not `"binary"`) to stay compatible with the driver adapter — see `prisma.ts` for the `PrismaClient({ adapter })` instantiation pattern.
+### Shared Utilities & Formatting (`src/lib/utils.ts`)
+- **DO NOT duplicate formatting functions** (e.g., `formatRupiah`, date helpers) locally inside page or component files.
+- Always check `src/lib/utils.ts` first. If a utility function is missing, add it to `src/lib/utils.ts` and import it.
+- **Rupiah Formatting**: Always use `formatRupiah(value)` from `src/lib/utils.ts` (`Intl.NumberFormat('id-ID', ...)`).
 
-## Proactive Bug Prevention
-- **Icon Conflicts**: When using `lucide-react`, watch out for components named the same as the icons (e.g., `History`, `Upload`). Always alias the icon import: `import { Upload as UploadIcon } from 'lucide-react';`.
-- **TypeScript Checking**: Before finishing any major refactor, always run `npx tsc --noEmit` in the frontend directory to ensure there are no broken imports or missing types.
+### Reusable UI Components (`src/components/ui/`)
+- Place generic, domain-agnostic UI helpers in `src/components/ui/`:
+  - `FadeIn.tsx`: Wrapper for smooth fade & slide-up animation.
+  - `SortIcon.tsx`: Reusable table header column sort indicator.
+  - `Spinner.tsx`: Loading spinner.
+- Do NOT rewrite or copy-paste animation wrappers or table sort indicators across features.
 
+### Global Constants & Enums (`src/lib/constants.ts`)
+- All status maps, status definitions, and global constants must reside in `src/lib/constants.ts`.
+- **Object Key Safety**: When defining status maps or lookups in TypeScript object literals, use **string keys** exclusively (e.g. `'1'`, `'2'`, `'5'`) to prevent JS property key duplication errors.
 
-# Design System
+### State Management & API Client
+- **Zustand**: Use Zustand for global application state (`authStore`, `themeStore`, `languageStore`). Avoid React Context unless strictly required for third-party libraries.
+- **Axios Client**: Use `api` from `src/lib/api.ts` for HTTP requests. It handles JWT header injection and 401 redirect logic automatically.
 
-This document outlines the core design system used in the application.
+### Internationalization (i18n)
+- **NO hardcoded user-facing strings** in components or pages.
+- Use `useTranslation` hook from `src/hooks/useTranslation.ts`.
+- Always add new translation keys to **BOTH** `en` and `id` dictionaries in `src/lib/translations.ts`.
+- Usage: `const { t } = useTranslation(); <p>{t('key_name')}</p>`
 
-## Styling Framework
-We use **TailwindCSS** for all styling, with Dark Mode support via the `class` strategy.
+---
 
-## Color Palette
-Colors are defined using CSS variables in `index.css` and mapped in `tailwind.config.js`. Do not use arbitrary colors (e.g., `text-[#123456]`), always use the semantic tokens.
+## 3. Backend Guidelines (Bun + Hono + Prisma 7)
 
-- **`primary`**: Main text color and prominent UI elements.
-- **`secondary`**: Subdued text, borders, and secondary buttons.
-- **`tertiary`**: The primary brand accent color (often used for primary buttons and active states).
-- **`neutral`**: Backgrounds for cards, table headers, and alternating rows.
-- **`surface`**: Main background color (white in light mode, dark in dark mode).
+### Framework & Routing (Hono)
+- Backend uses **Bun + Hono** (not ElysiaJS).
+- Controllers/Route handlers must remain thin.
+- Route-level validation must use **Zod** schemas via `@hono/zod-validator` (`zValidator`).
+- Always wrap route logic in `try/catch` and log errors via `logger.error(...)`.
+- Endpoints requiring authentication must apply `jwt` and `authPlugin` middlewares.
 
-## Typography
-Fonts are configured in Tailwind:
-- **`font-sans`** (`Inter`): Default font for body text, UI elements, and tables.
-- **`font-display`** (`Instrument Serif`): Used exclusively for large headers and welcome banners.
-- **`font-mono`** (`JetBrains Mono`): Used for numbers, form IDs, and technical data to ensure vertical alignment.
+### Database (Prisma 7.x + SQL Server)
+- Project uses **Prisma 7.x** with driver adapters (`@prisma/adapter-mssql`).
+- Connection URL lives in `prisma.config.ts` (not inside `schema.prisma`).
+- Schema `generator` block must specify `engineType = "client"` (compatible with driver adapter pattern in `src/db/prisma.ts`).
+- Do NOT run `prisma generate` unless the Prisma schema itself changes.
 
-## Core UI Components
-Instead of rewriting Tailwind classes, use the shared utility classes (typically defined in `index.css`):
-- **Buttons**:
-  - `.btn-primary`: For main actions (uses `tertiary` color).
-  - `.btn-secondary`: For secondary or cancel actions.
-- **Cards**:
-  - `.card`: Standard container with border, background, and shadow.
-- **Badges**:
-  - Used for status indicators.
-  - Success: `bg-emerald-500/10 text-emerald-600 border-emerald-500/25`
-  - Warning/Partial: `bg-amber-500/10 text-amber-600 border-amber-500/25`
-  - Danger/Error: `bg-rose-500/10 text-rose-600 border-rose-500/25`
+---
+
+## 4. Design System & Styling Rules
+
+### Styling Framework
+- Use **TailwindCSS** for all styling with dark mode support via the `class` strategy.
+- Use semantic color tokens defined in `index.css` / `tailwind.config.js`:
+  - `primary`: Main text color & primary UI elements.
+  - `secondary`: Muted text, borders, secondary buttons.
+  - `tertiary`: Accent color (primary buttons, active states).
+  - `neutral`: Component card backgrounds, table header fills.
+  - `surface`: Page main background color.
+- Avoid arbitrary hardcoded color hex values (e.g. `text-[#123456]`).
+
+### Core CSS Utilities & Badges
+- Buttons: `.btn-primary` (main actions), `.btn-secondary` (cancel/secondary actions).
+- Container Cards: `.card`.
+- Status Badges:
   - Draft: `.badge-draft`
   - Done: `.badge-done`
+  - Warning/Partial: `bg-amber-500/10 text-amber-600 border-amber-500/25`
+  - Danger/Error: `bg-rose-500/10 text-rose-600 border-rose-500/25`
+  - Success/Closed: `bg-emerald-500/10 text-emerald-600 border-emerald-500/25`
 
-## Icons
-Use **`lucide-react`** for all icons. Standard sizes are `16`, `18`, or `24`.
-If there's a naming conflict with a component (e.g., `History` or `Upload`), rename the icon in the import:
-`import { History as HistoryIcon } from "lucide-react";`
+### Lucide Icons
+- Use **`lucide-react`** for all icons with standard sizes (`16`, `18`, `24`).
+- **CRITICAL - Icon Aliasing**: Icons whose names match DOM globals or React components (e.g., `History`, `Upload`, `User`) **MUST BE ALIASED** upon import to prevent JSX compilation errors:
+  `import { History as HistoryIcon, Upload as UploadIcon, User as UserIcon } from 'lucide-react';`
 
-# Shared Contracts
+---
 
-This document outlines the shared contracts between the frontend and backend, including the database schema, API routing structures, and core domain models.
+## 5. Shared Contracts & Schemas
 
-## Database Schema (Prisma)
-The backend uses **Prisma 7.x** (driver adapters, `@prisma/adapter-mssql`) with **SQL Server**. Here are the core models:
+### Core Database Models
+- **Auth & Authorization**: `tbUsers` (`fdId`, `fdNama`, `fdUsername`, `fdRoleId`, `fdAvatar`), `tbRoles`, `tbRolePermissions`.
+- **Local Charges**: `tbLocalCharges` (`fdId`, `fdNomorForm`, `fdStatus`, `fdCreatedBy`), `tbLocalChargesDetail`, `tbLocalChargesLampiran`.
+- **Inspection Reports**: `tbInspectionReport` (`fdId`, `fdReportNumber`, `fdReportDate`, `fdStatus`), `VwtbEntryListCustomer` (SQL View for lookup autocomplete).
+- **Price List**: `tbPriceListUpload` (`fdId`, `fdFileName`, `fdPriceDate`, `fdEffectiveDate`, `fdStatus`), `tbPriceListItem` (`fdSheetType`, `fdMode`, `fdBranch`, `fdCategory`, `fdPrice`).
+- **API Mapping**: Price List database column names (`fdXxx`) are mapped to **camelCase** (`fileName`, `effectiveDate`, `branch`, `price`) in `priceList.service.ts` before returning API responses.
 
-### 1. Authentication & Authorization
-- **`tbUsers`**: `fdId`, `fdNama`, `fdUsername`, `fdPassword`, `fdAktif`, `fdRoleId`, `fdAvatar`
-- **`tbRoles`**: `fdId`, `fdNama`, `fdDeskripsi`
-- **`tbRolePermissions`**: `fdId`, `fdRoleId`, `fdPermission`
+---
 
-### 2. Local Charges
-- **`tbLocalCharges`**: `fdId`, `fdNomorForm`, `fdStatus`, `fdCreatedBy` (relation to `tbUsers`), etc.
-- **`tbLocalChargesDetail`**: Child records for charges (`fdNamaCustomer`, `fdMarking`, `fdNoReceipt`, etc.)
-- **`tbLocalChargesLampiran`**: File attachments.
+## 6. Proactive Bug Prevention & Verification Checklist
 
-### 3. Inspection Reports (BAP)
-- **`tbInspectionReport`**: `fdId`, `fdReportNumber`, `fdReportDate`, `fdListCode`, `fdMarkingCode`, `fdStatus`, `fdCreatedBy`, etc.
-- **`VwtbEntryListCustomer`**: SQL View mapped to provide auto-completion data for reports.
-- **`tbInspectionReportLampiran`**: File attachments.
-
-### 4. Price List
-<!-- DIPERBAIKI: model lama (`PriceListUpload`/`PriceListItem`) tidak mengikuti konvensi
-     penamaan tbXxx/fdXxx yang dipakai seluruh modul lain. Sudah diperbaiki lewat
-     migration terpisah (lihat plan-fix-naming.md) — model dan kolom sekarang konsisten. -->
-- **`tbPriceListUpload`**: `fdId`, `fdFileName`, `fdUploadedBy` (relation to `tbUsers`), `fdUploadedAt`, `fdPriceDate`, `fdEffectiveDate`, `fdStatus`, `fdWarnings`, `fdRawSnapshot`.
-- **`tbPriceListItem`**: Details from uploaded `.xlsx` files — `fdId`, `fdUploadId` (relation to `tbPriceListUpload`), `fdSheetType`, `fdMode`, `fdBranch`, `fdTransitTime`, `fdCategory`, `fdPrice`.
-- **Penting**: response API modul Price List (`GET`/`POST /api/pricelist/*`) tetap mengembalikan field dalam **camelCase** (`fileName`, `effectiveDate`, `branch`, `price`, dst) — `fdXxx` adalah nama kolom internal Prisma/DB saja, di-mapping balik ke camelCase di service layer (`mapUploadToApi`/`mapItemToApi` di `priceList.service.ts`) sebelum dikirim ke frontend. Konsumen frontend tidak perlu tahu soal prefix `fd`.
-- Fitur tambahan (multi-cabang & kode marking per upload, pairing 1 cabang : 1 marking) direncanakan lewat model `tbPriceListUploadBranch` — belum dieksekusi, lihat `plan.md` terpisah untuk detail skema.
-
-## API Structure (Hono)
-<!-- DIPERBAIKI: dokumen lama menyebut ElysiaJS. Dikonfirmasi Hono dari package.json. -->
-The backend is built with **Bun + Hono**. All endpoints are prefixed with `/api`.
-
-⚠️ **Belum terverifikasi**: dokumen lama menyatakan standard response envelope `{ success: boolean, data?: any, message?: string, error?: string }` untuk semua endpoint. Contoh route Price List yang sudah dilihat (`c.json(result, 201)`) mengembalikan hasil **langsung tanpa envelope**. Belum dikonfirmasi apakah ini penyimpangan khusus modul Price List, atau envelope ini sebenarnya tidak/belum diterapkan konsisten di seluruh API. Perlu dicek langsung ke source route lain (`auth.ts`, `users.ts`, dll) sebelum baris ini dianggap akurat.
-
-- **Auth**: `/api/auth/login`, `/api/auth/me`, `/api/auth/profile`
-- **Users & Roles**: `/api/users/*`, `/api/roles/*`
-- **Local Charges**: `/api/local-charges/*`
-- **Inspection Reports**: `/api/inspection-reports/*`
-- **Price List**: `/api/pricelist/*`
-
-## Frontend Types
-- Frontend stores JWT tokens using Zustand (`authStore.ts`).
-- Dates are generally ISO strings or converted using `toLocaleDateString`.
-- Translation keys are mapped in `src/lib/translations.ts`.
+- **No Dead / Commented-Out Code**: Remove unused code blocks, legacy commented routes, and stale imports.
+- **Icon Conflict Audit**: Check `lucide-react` imports for `History`, `Upload`, `User` before adding icon tags.
+- **Build Verification**: Before concluding any task or refactoring, ALWAYS run build verification:
+  - Frontend: `npm run build` or `cmd.exe /c "npx tsc --noEmit"`
+  - Backend: `cmd.exe /c "npx tsc --noEmit"`

@@ -104,27 +104,6 @@ inspectionReportRoutes.get('/stats', requirePermission('inspection_reports:read'
   }
 });
 
-// // GET /lookup - Lookup entry list data
-// inspectionReportRoutes.get('/lookup', requirePermission('inspection_reports:read'), async (c) => {
-//   const search = c.req.query('search') || '';
-//   try {
-//     const results = await prisma.vwtbEntryListCustomer.findMany({
-//       where: search ? {
-//         OR: [
-//           { fdMarkingCode: { startsWith: search } },
-//           { fdMarkingNo: { startsWith: search } },
-//           { fdCustName: { contains: search } },
-//         ],
-//       } : undefined,
-//       take: 25
-//     });
-//     return c.json(results);
-//   } catch (error) {
-//     logger.error('Error looking up marking code:', error);
-//     return c.json({ message: 'Failed to lookup marking code' }, 500);
-//   }
-// });
-
 // GET /lookup - Lookup entry list data
 inspectionReportRoutes.get(
   '/lookup',

@@ -116,7 +116,97 @@ export default function History() {
 
       {/* Table */}
       <div className="bg-surface shadow-md border border-secondary/20 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
+
+        {/* Mobile list view — kartu ringkas per upload, dikelompokkan per tanggal berlaku
+            sama seperti tabel, supaya tidak perlu scroll horizontal di layar sempit. */}
+        <div className="sm:hidden">
+          {loading ? (
+            <div className="divide-y divide-secondary/15">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="p-4 animate-pulse space-y-2">
+                  <div className="h-4 w-28 skeleton" />
+                  <div className="h-3 w-full max-w-[220px] skeleton" />
+                  <div className="h-3 w-32 skeleton" />
+                </div>
+              ))}
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <div className="flex flex-col items-center justify-center max-w-md mx-auto">
+                <div className="w-16 h-16 bg-neutral rounded-full flex items-center justify-center mb-4 border border-secondary/20">
+                  <FileSpreadsheet className="w-8 h-8 text-secondary" />
+                </div>
+                <h3 className="text-lg font-semibold text-primary mb-1">{t('pl_history_empty')}</h3>
+                <p className="text-secondary text-sm leading-relaxed mb-4">
+                  {t('pl_history_empty_desc')}
+                </p>
+                <Link to="/pricelist/upload" className="btn-secondary py-2 px-4 text-sm inline-flex items-center gap-1.5">
+                  <Upload size={16} /> {t('pl_upload_title')}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-secondary/10">
+              {groups.map((group, gi) => (
+                <div key={group.effectiveDate} className={`p-3 ${gi % 2 === 1 ? "bg-neutral/30" : "bg-surface"}`}>
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <span className="text-[0.9rem] font-bold text-primary">
+                      {new Date(group.effectiveDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    {group.items.length > 1 && (
+                      <span className="text-[0.62rem] font-mono font-semibold text-tertiary/70 uppercase tracking-wide">
+                        {group.items.length} versi
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {group.items.map((row) => (
+                      <Link
+                        key={row.id}
+                        to={`/pricelist/uploads/${row.id}`}
+                        className={`block rounded-lg border bg-surface p-3 transition-colors duration-150 active:bg-tertiary/[0.06] ${row.isSuperseded ? "opacity-55 border-secondary/10" : "border-secondary/20"
+                          }`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {row.isSuperseded && <CornerDownRight size={13} className="text-secondary/40 shrink-0" />}
+                            <span className="text-[0.85rem] font-mono text-secondary truncate">{row.fileName}</span>
+                          </div>
+                          <span className={`${STATUS_CLASS[row.status]} shrink-0`}>
+                            {t(`pl_status_${row.status.toLowerCase()}` as any)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 text-[0.78rem] text-secondary">
+                          <span className="truncate">
+                            {row.uploadedBy ?? "—"} ·{" "}
+                            {new Date(row.uploadedAt).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          <span className="shrink-0 font-mono flex items-center gap-1 text-tertiary">
+                            {row._count.items.toLocaleString("id-ID")} baris
+                            <ArrowRight size={12} />
+                          </span>
+                        </div>
+                        {row.isSuperseded && (
+                          <p className="text-[0.62rem] uppercase tracking-wide text-secondary/40 font-mono mt-1">
+                            · digantikan
+                          </p>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full divide-y divide-secondary/20">
             <thead className="bg-neutral/50">
               <tr>

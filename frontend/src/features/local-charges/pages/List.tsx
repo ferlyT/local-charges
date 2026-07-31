@@ -8,16 +8,11 @@ import { useAuthStore } from '../../../stores/authStore';
 import AnalyticsSection from '../../../components/AnalyticsSection';
 import { useTranslation } from '../../../hooks/useTranslation';
 import PullInvoiceDialog from '../../../components/PullInvoiceDialog';
+import SortIcon from '../../../components/ui/SortIcon';
 
 import { hasPermission } from '../../../lib/permissions';
 import { statusMap } from '../../../lib/constants';
 
-function SortIcon({ field, sortBy, sortOrder }: { field: string; sortBy: string; sortOrder: string }) {
-  if (sortBy !== field) return <ChevronsUpDown size={14} className="text-secondary/40 group-hover:text-secondary/70" />;
-  return sortOrder === 'asc'
-    ? <ChevronUp size={14} className="text-tertiary" />
-    : <ChevronDown size={14} className="text-tertiary" />;
-}
 
 export default function LocalChargesPage() {
   const [page, setPage] = useState(1);

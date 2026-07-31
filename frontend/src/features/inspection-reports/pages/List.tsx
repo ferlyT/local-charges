@@ -8,19 +8,9 @@ import { hasPermission } from '../../../lib/permissions';
 import AnalyticsSection from '../../../components/AnalyticsSection';
 import { useInspectionReportsStats } from '../../../hooks/useInspectionReportsStats';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { statusMap } from '../../../lib/constants';
+import SortIcon from '../../../components/ui/SortIcon';
 
-const statusMap: Record<string, { label: string; className: string; key: string }> = {
-  '1': { label: 'Draft', className: 'badge-draft', key: 'status_draft' },
-  '2': { label: 'Done', className: 'badge-done', key: 'status_done' },
-  '5': { label: 'Closed', className: 'badge bg-emerald-500/10 text-emerald-500 border-emerald-500/20', key: 'status_closed' }
-};
-
-function SortIcon({ field, sortBy, sortOrder }: { field: string; sortBy: string; sortOrder: string }) {
-  if (sortBy !== field) return <ChevronsUpDown size={14} className="text-secondary/40 group-hover:text-secondary/70" />;
-  return sortOrder === 'asc'
-    ? <ChevronUp size={14} className="text-tertiary" />
-    : <ChevronDown size={14} className="text-tertiary" />;
-}
 
 export default function InspectionReportsPage() {
   const [page, setPage] = useState(1);

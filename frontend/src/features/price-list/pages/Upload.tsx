@@ -37,6 +37,8 @@ const STATUS_LABEL: Record<UploadResult["status"], string> = {
   FAILED:  "Gagal Diproses",
 };
 
+import FadeIn from "../../../components/ui/FadeIn";
+
 // Default effective date = 1 bulan dari sekarang, awal bulan
 function defaultEffectiveDate() {
   const d = new Date();
@@ -45,32 +47,6 @@ function defaultEffectiveDate() {
   return d.toISOString().slice(0, 10);
 }
 
-// Fade + slide-up transisi kecil, dipakai untuk perpindahan antar state
-// (drop zone -> file terpilih -> hasil) supaya tidak terasa "loncat".
-function FadeIn({ show, children, className = "" }: { show: boolean; children: React.ReactNode; className?: string }) {
-  const [mounted, setMounted] = useState(show);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (show) {
-      setMounted(true);
-      const raf = requestAnimationFrame(() => setVisible(true));
-      return () => cancelAnimationFrame(raf);
-    }
-    setVisible(false);
-    const t = setTimeout(() => setMounted(false), 200);
-    return () => clearTimeout(t);
-  }, [show]);
-
-  if (!mounted) return null;
-  return (
-    <div
-      className={`transition-all duration-300 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function Upload() {
   const { t } = useTranslation();

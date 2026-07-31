@@ -155,7 +155,13 @@ export default function Layout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto pb-16 md:pb-0">
+      {/* min-h-0 (mobile, flex-col) & min-w-0 (desktop, md:flex-row) WAJIB ada di sini.
+          Tanpa ini, default flex-item punya min-height/min-width "auto" sehingga div
+          ini akan ikut membesar melebihi h-screen parent alih-alih men-scroll kontennya
+          sendiri — akibatnya overflow-auto tidak pernah aktif, scroll jatuh ke window,
+          dan elemen `sticky` di dalam Outlet (mis. filter Dashboard) tidak pernah nempel
+          karena scroll container-nya (div ini) sebenarnya tidak pernah discroll. */}
+      <div className="flex-1 overflow-auto pb-16 md:pb-0 min-h-0 min-w-0">
         <Outlet />
       </div>
 

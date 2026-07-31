@@ -1,7 +1,9 @@
-export const statusMap: Record<number, { label: string; className: string; key: any }> = {
-  1: { label: 'Draft', className: 'badge-draft', key: 'status_draft' },
-  2: { label: 'Done', className: 'badge-done', key: 'status_done' },
+export const statusMap: Record<string | number, { label: string; className: string; key: string }> = {
+  '1': { label: 'Draft', className: 'badge-draft', key: 'status_draft' },
+  '2': { label: 'Done', className: 'badge-done', key: 'status_done' },
+  '5': { label: 'Closed', className: 'badge bg-emerald-500/10 text-emerald-500 border-emerald-500/20', key: 'status_closed' },
 };
+
 
 /**
  * Resolves the backend API URL dynamically based on the client browser's origin,

@@ -194,10 +194,10 @@ export async function getUploadDetail(id: number) {
     },
   });
   if (!upload) return null;
-  
+
   const apiUpload = mapUploadToApi(upload);
   const apiItems = upload.items.map(mapItemToApi);
-  
+
   return {
     ...apiUpload,
     items: apiItems,
@@ -281,11 +281,11 @@ export async function getLatestUploadDiff() {
   return getUploadDiff(latest.fdId);
 }
 
-interface DashboardFilter {
-  sheetType?: string;
+export interface DashboardFilter {
+  sheetType?: string | string[];
   mode?: string;
   branch?: string;
-  category?: string;
+  category?: string | string[];
   from?: Date;
   to?: Date;
 }
@@ -324,10 +324,14 @@ export async function getPriceTrend(filter: DashboardFilter) {
   const items = await prisma.tbPriceListItem.findMany({
     where: {
       fdUploadId: { in: activeUploadIds },
-      ...(filter.sheetType && { fdSheetType: filter.sheetType }),
+      ...(filter.sheetType && {
+        fdSheetType: Array.isArray(filter.sheetType) ? { in: filter.sheetType } : filter.sheetType,
+      }),
       ...(filter.mode && { fdMode: filter.mode }),
       ...(filter.branch && { fdBranch: filter.branch }),
-      ...(filter.category && { fdCategory: filter.category }),
+      ...(filter.category && {
+        fdCategory: Array.isArray(filter.category) ? { in: filter.category } : filter.category,
+      }),
     },
     include: {
       upload: { select: { fdId: true, fdEffectiveDate: true, fdUploadedAt: true } },
@@ -347,7 +351,7 @@ export async function getPriceTrend(filter: DashboardFilter) {
 }
 
 interface FilterOptionsQuery {
-  sheetType?: string;
+  sheetType?: string | string[];
   mode?: string;
 }
 
@@ -363,7 +367,9 @@ interface FilterOptionsQuery {
  */
 export async function getFilterOptions(filter: FilterOptionsQuery = {}) {
   const scopedWhere: Prisma.tbPriceListItemWhereInput = {
-    ...(filter.sheetType && { fdSheetType: filter.sheetType }),
+    ...(filter.sheetType && {
+      fdSheetType: Array.isArray(filter.sheetType) ? { in: filter.sheetType } : filter.sheetType,
+    }),
     ...(filter.mode && { fdMode: filter.mode }),
   };
 

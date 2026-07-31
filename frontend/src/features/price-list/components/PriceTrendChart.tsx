@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ComposedChart,
@@ -24,67 +24,168 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import type { TrendSeries } from "../hooks/usePriceListTrend";
 
 function formatRupiah(v: number) {
   return `Rp ${v.toLocaleString("id-ID")}`;
 }
 
+// Badge kecil "CS"/"MKT" di sebelah nama kategori — gaya border-nya mengikuti
+// aturan dash yang sama dengan dot & garis: solid untuk sheet pertama, dashed
+// (border putus-putus) untuk sheet berikutnya.
+function SheetBadge({ sheetType, solid }: { sheetType: string; solid: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-[1px] rounded text-[0.62rem] font-semibold uppercase tracking-wide shrink-0 leading-tight ${
+        solid
+          ? "bg-secondary/15 text-secondary border border-secondary/20"
+          : "bg-transparent text-secondary/70 border border-dashed border-secondary/40"
+      }`}
+    >
+      {sheetType}
+    </span>
+  );
+}
+
+// Pola garis putus-putus per tipe sheet — sheet pertama yang muncul di data
+// selalu solid (paling gampang dibaca), sisanya dashed dengan pola berbeda-beda
+// supaya tetap bisa dibedakan walau warnanya sama (satu warna = satu kategori).
+const DASH_PATTERNS = ["", "7 5", "2 4", "1 4 4 4"];
+
 const LINE_COLORS = [
   "#2a78d6", "#1baf7a", "#eda100", "#4a3aa7", "#e34948", "#e87ba4", "#eb6834",
 ];
 
+// Mencampur warna hex dengan putih sebanyak `amount` (0-1) — dipakai untuk bikin
+// varian "lebih terang" dari warna kategori yang sama, supaya CS & MKT tetap
+// satu keluarga warna tapi kelihatan jelas bedanya (bukan cuma beda pola garis).
+function lightenHex(hex: string, amount: number) {
+  const clamp = (n: number) => Math.min(255, Math.max(0, n));
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const mix = (c: number) => clamp(Math.round(c + (255 - c) * amount));
+  const toHex = (c: number) => c.toString(16).padStart(2, "0");
+  return `#${toHex(mix(r))}${toHex(mix(g))}${toHex(mix(b))}`;
+}
+
 export function PriceTrendChart({
   chartData,
-  branches,
+  series,
   yDomain,
   latestPrices,
-  branchTrend,
+  seriesTrend,
   maxPrice,
   loading,
   isRefetching = false,
-  sheetType,
+  sheetTypes,
   mode,
-  category,
+  categories,
   branch,
 }: {
   chartData: any[];
-  branches: string[];
+  series: TrendSeries[];
   yDomain: (string | number)[];
   latestPrices: Record<string, number>;
-  branchTrend: Record<string, { delta: number; pct: number } | null>;
+  seriesTrend: Record<string, { delta: number; pct: number } | null>;
   maxPrice: number;
   loading: boolean;
   isRefetching?: boolean;
-  sheetType: string;
+  sheetTypes: string[];
   mode: string;
-  category: string;
+  categories: string[];
   branch: string;
 }) {
-  const [hiddenBranches, setHiddenBranches] = useState<Set<string>>(new Set());
-  const [activeBranch, setActiveBranch] = useState<string | null>(null);
-  const [branchQuery, setBranchQuery] = useState("");
+  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set());
+  const [activeSeriesKey, setActiveSeriesKey] = useState<string | null>(null);
+  const [categoryQuery, setCategoryQuery] = useState("");
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
 
-  const visibleBranches = branches.filter((d) =>
-    d.toLowerCase().includes(branchQuery.trim().toLowerCase())
+  const visibleSeries = series.filter((s) =>
+    s.category.toLowerCase().includes(categoryQuery.trim().toLowerCase())
   );
 
-  function toggleBranch(d: string) {
-    setHiddenBranches((prev) => {
+  function toggleSeries(key: string) {
+    setHiddenSeries((prev) => {
       const next = new Set(prev);
-      if (next.has(d)) next.delete(d);
-      else next.add(d);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
 
+  // Warna dipetakan per KATEGORI (bukan per series) supaya CS & MKT dari
+  // kategori yang sama tetap sewarna — cuma dibedakan pola garis (solid vs dashed).
+  const uniqueCategories = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const s of series) {
+      if (!seen.has(s.category)) {
+        seen.add(s.category);
+        list.push(s.category);
+      }
+    }
+    return list;
+  }, [series]);
+
+  const uniqueSheetTypes = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const s of series) {
+      if (!seen.has(s.sheetType)) {
+        seen.add(s.sheetType);
+        list.push(s.sheetType);
+      }
+    }
+    return list;
+  }, [series]);
+
+  // Label "Kategori · Sheet" cuma perlu ditampilkan kalau memang lebih dari satu
+  // tipe sheet lagi aktif — kalau cuma CS saja (atau MKT saja), cukup nama kategori.
+  const showSheetLabel = uniqueSheetTypes.length > 1;
+
+  function categoryColor(cat: string) {
+    const idx = uniqueCategories.indexOf(cat);
+    return LINE_COLORS[idx % LINE_COLORS.length];
+  }
+
+  // Warna dasar tetap dipetakan per KATEGORI, tapi sheet KEDUA dst. (mis. MKT)
+  // dibuat lebih terang dari sheet pertama (mis. CS) — jadi CS & MKT dari kategori
+  // yang sama masih satu keluarga warna (gampang dikenali sebagai kategori yang
+  // sama), tapi kelihatan jelas beda, bukan cuma beda pola garis solid/dashed.
+  function seriesColor(s: { category: string; sheetType: string }) {
+    const base = categoryColor(s.category);
+    const sheetIdx = uniqueSheetTypes.indexOf(s.sheetType);
+    if (sheetIdx <= 0) return base;
+    return lightenHex(base, Math.min(0.65, 0.4 + (sheetIdx - 1) * 0.15));
+  }
+
+  function sheetDash(st: string) {
+    const idx = uniqueSheetTypes.indexOf(st);
+    return DASH_PATTERNS[idx % DASH_PATTERNS.length] || undefined;
+  }
+
+  // Dot solid berwarna sesuai seriesColor — sekarang CS & MKT sudah beda warna
+  // sendiri, jadi dot cukup diisi penuh (tidak perlu lagi trik cincin/outline).
+  function seriesDotStyle(s: { category: string; sheetType: string }, isHidden: boolean) {
+    return { background: isHidden ? "var(--color-secondary, #94a3b8)" : seriesColor(s) };
+  }
+
+  function seriesLabel(s: { category: string; sheetType: string }) {
+    return showSheetLabel ? `${s.category} · ${s.sheetType}` : s.category;
+  }
+
+  const seriesByKey = useMemo(() => new Map(series.map((s) => [s.key, s])), [series]);
+
   const biggestMover = (() => {
-    if (!branchTrend) return null;
-    let best: { branch: string; delta: number; pct: number } | null = null;
-    for (const [b, tr] of Object.entries(branchTrend)) {
+    if (!seriesTrend) return null;
+    let best: { label: string; delta: number; pct: number } | null = null;
+    for (const [key, tr] of Object.entries(seriesTrend)) {
       if (!tr || tr.delta === 0) continue;
       if (!best || Math.abs(tr.pct) > Math.abs(best.pct)) {
-        best = { branch: b, delta: tr.delta, pct: tr.pct };
+        const s = seriesByKey.get(key);
+        best = { label: s ? seriesLabel(s) : key, delta: tr.delta, pct: tr.pct };
       }
     }
     return best;
@@ -107,8 +208,8 @@ export function PriceTrendChart({
                 </span>
               )}
             </h2>
-            <p className="text-[0.78rem] text-secondary truncate">
-              {sheetType || "—"} · {mode || "—"} · {category || "—"}
+            <p className="text-[0.78rem] text-secondary truncate" title={branch || undefined}>
+              {sheetTypes.length === 0 ? "—" : sheetTypes.join(" + ")} · {mode || "—"} · {branch || "Pilih cabang"}
             </p>
           </div>
         </div>
@@ -136,11 +237,11 @@ export function PriceTrendChart({
         )}
       </div>
 
-      {biggestMover && !branch && !loading && (
+      {biggestMover && !loading && (
         <div className="px-4 sm:px-6 py-3 bg-tertiary/5 border-b border-secondary/10 flex items-start sm:items-center gap-2.5">
           <Lightbulb size={15} className="text-tertiary shrink-0 mt-0.5 sm:mt-0" />
           <p className="text-[0.82rem] text-primary">
-            <span className="font-semibold">{biggestMover.branch}</span> mengalami perubahan harga
+            <span className="font-semibold">{biggestMover.label}</span> mengalami perubahan harga
             terbesar:{" "}
             <span className={`font-semibold ${biggestMover.delta > 0 ? "text-rose-600" : "text-emerald-600"}`}>
               {biggestMover.delta > 0 ? "naik" : "turun"} {formatRupiah(Math.abs(biggestMover.delta))}
@@ -158,7 +259,7 @@ export function PriceTrendChart({
             <div className="h-2 w-32 skeleton rounded-full animate-pulse" />
             <p className="text-sm text-secondary mt-2">Memuat data tren harga...</p>
           </div>
-        ) : !sheetType && !mode && !category ? (
+        ) : sheetTypes.length === 0 && !mode && categories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 bg-neutral rounded-full flex items-center justify-center mb-4 border border-secondary/20">
               <BarChart3 className="w-8 h-8 text-secondary" />
@@ -184,58 +285,56 @@ export function PriceTrendChart({
           </div>
         ) : (
           <div className={`transition-opacity duration-300 ${isRefetching ? "opacity-50" : "opacity-100"}`}>
-            {!branch && (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
                 <div className="relative flex-1 max-w-xs">
                   <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary" />
                   <input
                     type="text"
-                    value={branchQuery}
-                    onChange={(e) => setBranchQuery(e.target.value)}
-                    placeholder="Cari cabang..."
+                    value={categoryQuery}
+                    onChange={(e) => setCategoryQuery(e.target.value)}
+                    placeholder="Cari kategori..."
                     className="form-input py-1.5 pl-8 pr-7 text-sm w-full"
                   />
-                  {branchQuery && (
+                  {categoryQuery && (
                     <button
                       type="button"
-                      onClick={() => setBranchQuery("")}
+                      onClick={() => setCategoryQuery("")}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary hover:text-primary"
                     >
                       <X size={14} />
                     </button>
                   )}
                 </div>
-                {hiddenBranches.size > 0 && (
+                {hiddenSeries.size > 0 && (
                   <button
                     type="button"
-                    onClick={() => setHiddenBranches(new Set())}
+                    onClick={() => setHiddenSeries(new Set())}
                     className="text-[0.78rem] font-medium text-tertiary hover:underline shrink-0"
                   >
-                    Tampilkan semua ({hiddenBranches.size} disembunyikan)
+                    Tampilkan semua ({hiddenSeries.size} disembunyikan)
                   </button>
                 )}
               </div>
-            )}
 
-            {!branch && visibleBranches.length > 0 && (
+            {visibleSeries.length > 0 && (
               <div className="hidden sm:flex items-center gap-3 px-2.5 mb-1.5 text-[0.68rem] font-semibold text-secondary/70 uppercase tracking-[0.04em]">
                 <span className="w-5 shrink-0 text-right">#</span>
                 <span className="w-2.5 shrink-0" />
-                <span className="w-16 shrink-0">Cabang</span>
+                <span className={`${showSheetLabel ? "w-48" : "w-32"} shrink-0`}>Kategori</span>
                 <span className="flex-1">Posisi Harga</span>
                 <span className="w-28 shrink-0 text-right">Harga Terkini</span>
                 <span className="w-16 shrink-0 text-right">Tren</span>
               </div>
             )}
-            {!branch && (
+            {(
               <div className="flex flex-col gap-1 mb-5">
-                {visibleBranches.map((d) => {
-                  const i = branches.indexOf(d);
-                  const color = LINE_COLORS[i % LINE_COLORS.length];
-                  const isHidden = hiddenBranches.has(d);
-                  const price = latestPrices[d];
+                {visibleSeries.map((s, i) => {
+                  const d = seriesLabel(s);
+                  const color = seriesColor(s);
+                  const isHidden = hiddenSeries.has(s.key);
+                  const price = latestPrices[s.key];
                   const barPct = maxPrice && price != null ? Math.max(4, (price / maxPrice) * 100) : 0;
-                  const tr = branchTrend?.[d] ?? null;
+                  const tr = seriesTrend?.[s.key] ?? null;
                   const trendChip = tr && tr.delta !== 0 ? (
                     <span className={`flex items-center gap-0.5 ${tr.delta > 0 ? "text-rose-600" : "text-emerald-600"}`}>
                       {tr.delta > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
@@ -247,10 +346,10 @@ export function PriceTrendChart({
                     </span>
                   );
                   return (
-                    <div key={d}>
+                    <div key={s.key}>
                       <button
                         type="button"
-                        onClick={() => toggleBranch(d)}
+                        onClick={() => toggleSeries(s.key)}
                         className={`sm:hidden w-full flex flex-col gap-1.5 px-2.5 py-2.5 rounded-lg text-left transition-all ${isHidden ? "opacity-40" : "active:bg-neutral"
                           }`}
                       >
@@ -261,9 +360,15 @@ export function PriceTrendChart({
                             </span>
                             <span
                               className="w-2.5 h-2.5 rounded-full shrink-0"
-                              style={{ background: isHidden ? "var(--color-secondary, #94a3b8)" : color }}
+                              style={seriesDotStyle(s, isHidden)}
                             />
-                            <span className="text-[0.85rem] font-semibold text-primary truncate">{d}</span>
+                            <span className="text-[0.85rem] font-semibold text-primary truncate">{s.category}</span>
+                            {showSheetLabel && (
+                              <SheetBadge
+                                sheetType={s.sheetType}
+                                solid={uniqueSheetTypes.indexOf(s.sheetType) === 0}
+                              />
+                            )}
                           </div>
                           <span className="text-[0.75rem] font-medium tabular-nums shrink-0">{trendChip}</span>
                         </div>
@@ -282,9 +387,9 @@ export function PriceTrendChart({
 
                       <button
                         type="button"
-                        onClick={() => toggleBranch(d)}
-                        onMouseEnter={() => setActiveBranch(d)}
-                        onMouseLeave={() => setActiveBranch(null)}
+                        onClick={() => toggleSeries(s.key)}
+                        onMouseEnter={() => setActiveSeriesKey(s.key)}
+                        onMouseLeave={() => setActiveSeriesKey(null)}
                         className={`hidden sm:flex items-center gap-3 px-2.5 py-2 rounded-lg text-left w-full transition-all ${isHidden ? "opacity-40" : "hover:bg-neutral"
                           }`}
                       >
@@ -293,10 +398,19 @@ export function PriceTrendChart({
                         </span>
                         <span
                           className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: isHidden ? "var(--color-secondary, #94a3b8)" : color }}
+                          style={seriesDotStyle(s, isHidden)}
                         />
-                        <span className="w-16 shrink-0 text-[0.85rem] font-semibold text-primary whitespace-nowrap">
-                          {d}
+                        <span
+                          className={`${showSheetLabel ? "w-48" : "w-32"} shrink-0 flex items-center gap-1.5 text-[0.85rem] font-semibold text-primary`}
+                          title={d}
+                        >
+                          <span className="truncate">{s.category}</span>
+                          {showSheetLabel && (
+                            <SheetBadge
+                              sheetType={s.sheetType}
+                              solid={uniqueSheetTypes.indexOf(s.sheetType) === 0}
+                            />
+                          )}
                         </span>
                         <span className="flex-1 h-2 rounded-full bg-neutral overflow-hidden min-w-[60px]">
                           <span
@@ -314,8 +428,8 @@ export function PriceTrendChart({
                     </div>
                   );
                 })}
-                {visibleBranches.length === 0 && (
-                  <p className="text-sm text-secondary py-1">Tidak ada cabang yang cocok dengan pencarian.</p>
+                {visibleSeries.length === 0 && (
+                  <p className="text-sm text-secondary py-1">Tidak ada kategori yang cocok dengan pencarian.</p>
                 )}
               </div>
             )}
@@ -325,16 +439,12 @@ export function PriceTrendChart({
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
                     <defs>
-                      {branches.map((d) => {
-                        const i = branches.indexOf(d);
-                        const color = LINE_COLORS[i % LINE_COLORS.length];
-                        return (
-                          <linearGradient key={d} id={`fill-${d}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-                            <stop offset="100%" stopColor={color} stopOpacity={0} />
-                          </linearGradient>
-                        );
-                      })}
+                      {series.map((s) => (
+                        <linearGradient key={s.key} id={`fill-${s.key}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={seriesColor(s)} stopOpacity={0.28} />
+                          <stop offset="100%" stopColor={seriesColor(s)} stopOpacity={0} />
+                        </linearGradient>
+                      ))}
                     </defs>
                     <CartesianGrid vertical={false} strokeDasharray="3 6" stroke="var(--color-secondary, #94a3b8)" strokeOpacity={0.15} />
                     <XAxis
@@ -369,11 +479,11 @@ export function PriceTrendChart({
                       labelStyle={{ fontWeight: 600, marginBottom: "4px" }}
                       itemSorter={(item) => -(item.value as number)}
                     />
-                    {activeBranch && !hiddenBranches.has(activeBranch) && (
+                    {activeSeriesKey && !hiddenSeries.has(activeSeriesKey) && (
                       <Area
-                        dataKey={activeBranch}
+                        dataKey={activeSeriesKey}
                         stroke="none"
-                        fill={`url(#fill-${activeBranch})`}
+                        fill={`url(#fill-${activeSeriesKey})`}
                         connectNulls
                         isAnimationActive={false}
                         legendType="none"
@@ -381,19 +491,19 @@ export function PriceTrendChart({
                         activeDot={false}
                       />
                     )}
-                    {branches
-                      .filter((d) => !hiddenBranches.has(d))
-                      .map((d) => {
-                        const i = branches.indexOf(d);
-                        const isDimmed = activeBranch !== null && activeBranch !== d;
+                    {series
+                      .filter((s) => !hiddenSeries.has(s.key))
+                      .map((s) => {
+                        const isDimmed = activeSeriesKey !== null && activeSeriesKey !== s.key;
                         return (
                           <Line
-                            key={d}
+                            key={s.key}
                             type="monotone"
-                            dataKey={d}
-                            name={d}
-                            stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                            strokeWidth={activeBranch === d ? 3.5 : 2.5}
+                            dataKey={s.key}
+                            name={seriesLabel(s)}
+                            stroke={seriesColor(s)}
+                            strokeDasharray={sheetDash(s.sheetType)}
+                            strokeWidth={activeSeriesKey === s.key ? 3.5 : 2.5}
                             strokeOpacity={isDimmed ? 0.2 : 1}
                             dot={{ r: 4, strokeWidth: 2, fill: "var(--color-surface, #fff)" }}
                             activeDot={{ r: 6 }}
@@ -406,47 +516,65 @@ export function PriceTrendChart({
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6 rounded-lg border border-secondary/10">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-secondary/15 bg-neutral/60">
-                      <th className="text-left py-2.5 pr-4 pl-2 font-semibold text-secondary text-[0.78rem] uppercase tracking-[0.04em] sticky left-0 bg-neutral/95 backdrop-blur">
-                        Tanggal Berlaku
-                      </th>
-                      {visibleBranches
-                        .filter((d) => !hiddenBranches.has(d))
-                        .map((d) => (
-                          <th key={d} className="text-right py-2.5 px-4 font-semibold text-primary whitespace-nowrap">
-                            {d}
+              <div className="-mx-4 sm:-mx-6 px-4 sm:px-6">
+                {/* overflow-hidden + rounded di sini (bukan di div scroll) — kalau digabung
+                    di satu elemen yang sama dengan overflow-x-auto, kolom sticky bisa bocor
+                    keluar dari border radius di sebagian browser mobile. */}
+                <div className="overflow-hidden rounded-lg border border-secondary/10">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b border-secondary/15 bg-neutral/60">
+                          <th className="text-left py-2.5 pr-4 pl-2 font-semibold text-secondary text-[0.78rem] uppercase tracking-[0.04em] sticky left-0 z-10 bg-neutral shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
+                            Tanggal Berlaku
                           </th>
-                        ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chartData.map((row, idx) => (
-                      <tr
-                        key={String(row.date)}
-                        className={`border-b border-secondary/10 last:border-0 ${idx % 2 === 1 ? "bg-neutral/30" : "bg-transparent"
-                          }`}
-                      >
-                        <td className="py-2.5 pr-4 pl-2 text-secondary whitespace-nowrap sticky left-0 bg-inherit">
-                          {new Date(String(row.date)).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </td>
-                        {visibleBranches
-                          .filter((d) => !hiddenBranches.has(d))
-                          .map((d) => (
-                            <td key={d} className="text-right py-2.5 px-4 text-primary whitespace-nowrap tabular-nums">
-                              {row[d] != null ? formatRupiah(Number(row[d])) : "—"}
+                          {visibleSeries
+                            .filter((s) => !hiddenSeries.has(s.key))
+                            .map((s) => (
+                              <th key={s.key} className="text-right py-2.5 px-4 font-semibold text-primary whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1.5">
+                                  {s.category}
+                                  {showSheetLabel && (
+                                    <SheetBadge
+                                      sheetType={s.sheetType}
+                                      solid={uniqueSheetTypes.indexOf(s.sheetType) === 0}
+                                    />
+                                  )}
+                                </span>
+                              </th>
+                            ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {chartData.map((row, idx) => (
+                          <tr
+                            key={String(row.date)}
+                            className={`border-b border-secondary/10 last:border-0 ${idx % 2 === 1 ? "bg-neutral/30" : "bg-transparent"
+                              }`}
+                          >
+                            <td
+                              className={`py-2.5 pr-4 pl-2 text-secondary whitespace-nowrap sticky left-0 z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] ${idx % 2 === 1 ? "bg-neutral" : "bg-surface"
+                                }`}
+                            >
+                              {new Date(String(row.date)).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
                             </td>
-                          ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            {visibleSeries
+                              .filter((s) => !hiddenSeries.has(s.key))
+                              .map((s) => (
+                                <td key={s.key} className="text-right py-2.5 px-4 text-primary whitespace-nowrap tabular-nums">
+                                  {row[s.key] != null ? formatRupiah(Number(row[s.key])) : "—"}
+                                </td>
+                              ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import api from "../../../lib/api";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { ArrowLeft, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Filter } from "lucide-react";
+import { formatRupiah } from "../../../lib/utils";
 
 interface DiffRow {
   sheetType: string;
@@ -21,10 +22,6 @@ interface DiffResponse {
   previousUploadId: number | null;
   previousEffectiveDate: string | null;
   diff: DiffRow[];
-}
-
-function formatRupiah(v: number) {
-  return v.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 }
 
 export default function Detail() {
